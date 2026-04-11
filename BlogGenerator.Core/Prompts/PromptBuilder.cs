@@ -96,7 +96,7 @@ public static class PromptBuilder
 
             {guidanceBlock}
 
-            Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. Markdown only (no HTML).
+            Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. {(settings.ImgflipMemeEnabled ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim." : "Markdown only (no HTML).")}
             If web search fails or yields little, write a pragmatic evergreen piece for the same audience.
             If the web_search tool is unavailable, do not emit tool-call markup (e.g., <|start|> tokens); respond directly with the final article.
             """.ReplaceLineEndings("\n").Trim();
