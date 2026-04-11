@@ -25,19 +25,25 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v5
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Validate Foundry configuration
-        if: ${{ inputs.ai_provider == 'foundry' }}
+      - name: Validate provider secrets
         env:
+          PROVIDER: ${{ inputs.ai_provider || 'foundry' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FOUNDRY_OPENAI_ENDPOINT: ${{ secrets.FOUNDRY_OPENAI_ENDPOINT }}
           FOUNDRY_PROJECT_API_KEY: ${{ secrets.FOUNDRY_PROJECT_API_KEY }}
         run: |
-          [ -n "$FOUNDRY_OPENAI_ENDPOINT" ] || { echo "::error::Missing FOUNDRY_OPENAI_ENDPOINT secret."; exit 1; }
-          [ -n "$FOUNDRY_PROJECT_API_KEY" ] || { echo "::error::Missing FOUNDRY_PROJECT_API_KEY secret."; exit 1; }
+          case "$PROVIDER" in
+            anthropic|claude)
+              [ -n "$ANTHROPIC_API_KEY" ] || { echo "::error::Missing ANTHROPIC_API_KEY secret."; exit 1; }
+              ;;
+            foundry|azure)
+              [ -n "$FOUNDRY_OPENAI_ENDPOINT" ] || { echo "::error::Missing FOUNDRY_OPENAI_ENDPOINT secret."; exit 1; }
+              [ -n "$FOUNDRY_PROJECT_API_KEY" ] || { echo "::error::Missing FOUNDRY_PROJECT_API_KEY secret."; exit 1; }
+              ;;
+            *)
+              echo "::error::Unknown provider: $PROVIDER"; exit 1
+              ;;
+          esac
 
       - name: Generate grounded article via Web Search
         env:
@@ -47,6 +53,7 @@ jobs:
           IMGFLIP_USERNAME: ${{ secrets.IMGFLIP_USERNAME }}
           IMGFLIP_PASSWORD: ${{ secrets.IMGFLIP_PASSWORD }}
         run: |
+          dotnet --version | grep -q "^10\." || { echo "::error::.NET 10 not found on runner."; exit 1; }
           dotnet run --project BlogGenerator -- ${{ inputs.ai_provider || 'foundry' }}
 
       - name: Commit & push if changed
