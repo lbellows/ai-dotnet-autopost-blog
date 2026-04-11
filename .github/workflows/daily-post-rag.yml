@@ -44,6 +44,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FOUNDRY_OPENAI_ENDPOINT: ${{ secrets.FOUNDRY_OPENAI_ENDPOINT }}
           FOUNDRY_PROJECT_API_KEY: ${{ secrets.FOUNDRY_PROJECT_API_KEY }}
+          IMGFLIP_USERNAME: ${{ secrets.IMGFLIP_USERNAME }}
+          IMGFLIP_PASSWORD: ${{ secrets.IMGFLIP_PASSWORD }}
         run: |
           dotnet run --project BlogGenerator -- ${{ inputs.ai_provider || 'foundry' }}
 

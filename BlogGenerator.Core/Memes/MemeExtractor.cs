@@ -2,13 +2,14 @@ using System.Text.RegularExpressions;
 
 namespace BlogGenerator.Core.Memes;
 
-public record ImgflipHint(string TemplateName, string TopText, string BottomText);
+// Texts maps to each text box in order; length should match the template's box_count.
+public record ImgflipHint(string TemplateName, IReadOnlyList<string> Texts);
 
 public static partial class MemeExtractor
 {
-    // Matches: <!-- meme: template=drake, top="...", bottom="..." -->
+    // Matches: <!-- meme: template=Gru's Plan, texts="A|B|C|D" -->
     [GeneratedRegex(
-        @"<!--\s*meme:\s*template=(?<template>[^,]+),\s*top=""(?<top>[^""]*)"",\s*bottom=""(?<bottom>[^""]*)""\s*-->",
+        @"<!--\s*meme:\s*template=(?<template>[^,]+),\s*texts=""(?<texts>[^""]*)""\s*-->",
         RegexOptions.IgnoreCase)]
     private static partial Regex ImgflipHintPattern();
 
@@ -16,10 +17,11 @@ public static partial class MemeExtractor
     {
         var match = ImgflipHintPattern().Match(markdownBody);
         if (!match.Success) return null;
-        return new ImgflipHint(
-            match.Groups["template"].Value.Trim(),
-            match.Groups["top"].Value.Trim(),
-            match.Groups["bottom"].Value.Trim());
+        var texts = match.Groups["texts"].Value
+            .Split('|')
+            .Select(t => t.Trim())
+            .ToList();
+        return new ImgflipHint(match.Groups["template"].Value.Trim(), texts);
     }
 
     public static string RemoveImgflipHint(string markdownBody) =>

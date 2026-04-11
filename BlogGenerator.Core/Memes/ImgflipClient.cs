@@ -30,6 +30,14 @@ public sealed class ImgflipClient(HttpClient http)
         IReadOnlyDictionary<string, ImgflipTemplate> templates,
         CancellationToken ct = default)
     {
+        var username = Environment.GetEnvironmentVariable("IMGFLIP_USERNAME") ?? string.Empty;
+        var password = Environment.GetEnvironmentVariable("IMGFLIP_PASSWORD") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            Console.WriteLine("Imgflip: IMGFLIP_USERNAME or IMGFLIP_PASSWORD not set; skipping meme.");
+            return null;
+        }
+
         var template = FindTemplate(hint.TemplateName, templates);
         if (template is null)
         {
@@ -37,12 +45,16 @@ public sealed class ImgflipClient(HttpClient http)
             return null;
         }
 
-        var formData = new FormUrlEncodedContent(
-        [
+        var fields = new List<KeyValuePair<string, string>>
+        {
             new("template_id", template.Id),
-            new("text0", hint.TopText),
-            new("text1", hint.BottomText),
-        ]);
+            new("username", username),
+            new("password", password),
+        };
+        for (var i = 0; i < hint.Texts.Count; i++)
+            fields.Add(new($"boxes[{i}][text]", hint.Texts[i]));
+
+        var formData = new FormUrlEncodedContent(fields);
 
         HttpResponseMessage httpResponse;
         try
@@ -101,9 +113,10 @@ public sealed class ImgflipClient(HttpClient http)
 
 public sealed class ImgflipTemplate
 {
-    [JsonPropertyName("id")]   public string Id   { get; init; } = string.Empty;
-    [JsonPropertyName("name")] public string Name { get; init; } = string.Empty;
-    [JsonPropertyName("url")]  public string Url  { get; init; } = string.Empty;
+    [JsonPropertyName("id")]        public string Id       { get; init; } = string.Empty;
+    [JsonPropertyName("name")]      public string Name     { get; init; } = string.Empty;
+    [JsonPropertyName("url")]       public string Url      { get; init; } = string.Empty;
+    [JsonPropertyName("box_count")] public int    BoxCount { get; init; } = 2;
 }
 
 file sealed class ImgflipGetMemesResponse

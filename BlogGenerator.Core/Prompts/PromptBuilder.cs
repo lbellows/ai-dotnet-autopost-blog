@@ -33,12 +33,22 @@ public static class PromptBuilder
         "Panik Kalm Panik, Buff Doge vs. Cheems, " +
         "Left Exit 12 Off Ramp, Third World Skeptical Kid";
 
+    // Box counts per template — drives how many pipe-separated texts GPT must supply.
+    private const string ImgflipTemplateBoxCounts =
+        "Drake Hotline Bling(2), Distracted Boyfriend(3), Two Buttons(3), " +
+        "Expanding Brain(4), Change My Mind(2), Gru's Plan(4), " +
+        "One Does Not Simply(2), This Is Fine(2), " +
+        "Waiting Skeleton(2), Bernie I Am Once Again Asking(2), " +
+        "They're The Same Picture(3), Trade Offer(3), " +
+        "Panik Kalm Panik(3), Buff Doge vs. Cheems(4), " +
+        "Left Exit 12 Off Ramp(3), Third World Skeptical Kid(2)";
+
     private const string ImgflipGuidance =
         "At the most relevant point in the article, output exactly one HTML comment on its own line in this format: " +
-        "<!-- meme: template=TEMPLATE_NAME, top=\"TOP TEXT\", bottom=\"BOTTOM TEXT\" --> " +
-        $"Pick TEMPLATE_NAME from this list (use the name exactly as written): {ImgflipTemplateList}. " +
+        "<!-- meme: template=TEMPLATE_NAME, texts=\"TEXT0|TEXT1|...\" --> " +
+        $"Pick TEMPLATE_NAME from this list — the number in parentheses is how many pipe-separated texts to supply: {ImgflipTemplateBoxCounts}. " +
         "Choose whichever template best fits the tone of the story. " +
-        "Keep TOP TEXT and BOTTOM TEXT short (under 60 chars each), witty, and relevant to the post topic. " +
+        "Supply exactly as many texts as the box count requires, each under 60 chars, witty, and relevant to the post topic. " +
         "Do not put the comment inside a code block.";
 
     public static PromptContext Build(GenerationSettings settings, DateOnly? today = null)
