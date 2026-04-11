@@ -366,3 +366,49 @@ mark {
     border-radius: 2px;
     padding: 0 1px;
 }
+
+/* Jump-link anchors on h2 headings */
+.post-content h2 {
+    position: relative;
+}
+.h2-anchor {
+    display: inline-flex;
+    align-items: center;
+    margin-left: .4em;
+    opacity: 0;
+    transition: opacity 120ms;
+    color: var(--green-600);
+    text-decoration: none;
+    font-size: .75em;
+    vertical-align: middle;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+}
+.post-content h2:hover .h2-anchor,
+.h2-anchor:focus {
+    opacity: 1;
+}
+.h2-anchor.copied {
+    color: #0891b2;
+}
+.h2-anchor-tooltip {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    background: #0f172a;
+    color: #fff;
+    font-size: .72rem;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms;
+    z-index: 10;
+    font-weight: 400;
+}
+.h2-anchor-tooltip.visible {
+    opacity: 1;
+}
