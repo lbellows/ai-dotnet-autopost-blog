@@ -1,0 +1,78 @@
+<style>
+  /* Jump-link anchors on h2 headings */
+  .post-content h2 {
+    position: relative;
+  }
+  .h2-anchor {
+    display: inline-flex;
+    align-items: center;
+    margin-left: .4em;
+    opacity: 0;
+    transition: opacity 120ms;
+    color: var(--green-600);
+    text-decoration: none;
+    font-size: .75em;
+    vertical-align: middle;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+  }
+  .post-content h2:hover .h2-anchor,
+  .h2-anchor:focus {
+    opacity: 1;
+  }
+  .h2-anchor.copied {
+    color: #0891b2;
+  }
+  .h2-anchor-tooltip {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    background: #0f172a;
+    color: #fff;
+    font-size: .72rem;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms;
+    z-index: 10;
+    font-weight: 400;
+  }
+  .h2-anchor-tooltip.visible {
+    opacity: 1;
+  }
+</style>
+<script defer>
+  document.addEventListener('DOMContentLoaded', function () {
+    var content = document.querySelector('.post-content');
+    if (!content) return;
+    content.querySelectorAll('h2[id]').forEach(function (h2) {
+      var btn = document.createElement('button');
+      btn.className = 'h2-anchor';
+      btn.setAttribute('aria-label', 'Copy link to section');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
+      var tooltip = document.createElement('span');
+      tooltip.className = 'h2-anchor-tooltip';
+      tooltip.textContent = 'Copied!';
+      h2.style.position = 'relative';
+      h2.appendChild(btn);
+      h2.appendChild(tooltip);
+
+      btn.addEventListener('click', function () {
+        var url = location.origin + location.pathname + '#' + h2.id;
+        navigator.clipboard.writeText(url).then(function () {
+          btn.classList.add('copied');
+          tooltip.classList.add('visible');
+          setTimeout(function () {
+            btn.classList.remove('copied');
+            tooltip.classList.remove('visible');
+          }, 1800);
+        });
+      });
+    });
+  });
+</script>
