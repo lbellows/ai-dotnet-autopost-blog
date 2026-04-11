@@ -129,7 +129,6 @@ exclude:
   - BlogGenerator.Core
   - BlogGenerator.Tests
   - BlogGenerator.sln
-  - fonts
   - .github
   - .devcontainer
   - .vscode

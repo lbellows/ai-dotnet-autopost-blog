@@ -27,6 +27,16 @@ public static partial class MemeExtractor
     public static string RemoveImgflipHint(string markdownBody) =>
         ImgflipHintPattern().Replace(markdownBody, string.Empty).Trim();
 
+    // Replaces the hint comment in-place with the rendered image markdown,
+    // preserving GPT's chosen position in the article.
+    public static string ReplaceImgflipHint(string markdownBody, string imageUrl, string title)
+    {
+        var altText = $"{title} meme";
+        if (altText.Length > 80) altText = altText[..77] + "...";
+        var imageMarkdown = $"![{altText}]({imageUrl})";
+        return ImgflipHintPattern().Replace(markdownBody, imageMarkdown);
+    }
+
     public static string? ExtractTldrLine(string markdownBody)
     {
         var lines = markdownBody.Split('\n');

@@ -75,4 +75,17 @@ public class MemeExtractorTests
         Assert.Contains("Intro.", cleaned);
         Assert.Contains("Outro.", cleaned);
     }
+
+    [Fact]
+    public void ReplacesImgflipHintInPlace()
+    {
+        var md = "Intro.\n<!-- meme: template=Drake Hotline Bling, texts=\"A|B\" -->\nOutro.";
+        var result = MemeExtractor.ReplaceImgflipHint(md, "https://i.imgflip.com/abc.jpg", "My Post");
+        Assert.DoesNotContain("<!-- meme:", result);
+        Assert.Contains("![My Post meme](https://i.imgflip.com/abc.jpg)", result);
+        // Position preserved — image sits between intro and outro
+        var imageIndex = result.IndexOf("![");
+        Assert.True(result.IndexOf("Intro.") < imageIndex);
+        Assert.True(imageIndex < result.IndexOf("Outro."));
+    }
 }

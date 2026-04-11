@@ -37,20 +37,23 @@ public static partial class PostWriter
         if (Directory.GetFiles(postsDir, existingPattern).Length > 0)
             slug += "-2";
 
-        var summary = MemeExtractor.ExtractTldrLine(markdownBody);
         string? memeRelPath = null;
 
         if (settings.ImgflipMemeEnabled && imgflipClient is not null)
         {
             var hint = MemeExtractor.ExtractImgflipHint(markdownBody);
-            markdownBody = MemeExtractor.RemoveImgflipHint(markdownBody);
             if (hint is not null)
             {
                 var memeUrl = GenerateImgflipMemeAsync(imgflipClient, hint).GetAwaiter().GetResult();
                 if (memeUrl is not null)
                 {
                     memeRelPath = memeUrl;
-                    markdownBody = MemeInjector.InjectMemeIntoMarkdown(markdownBody, memeUrl, title, summary);
+                    // Replace the comment in-place so the meme appears where GPT chose to put it.
+                    markdownBody = MemeExtractor.ReplaceImgflipHint(markdownBody, memeUrl, title);
+                }
+                else
+                {
+                    markdownBody = MemeExtractor.RemoveImgflipHint(markdownBody);
                 }
             }
             else
