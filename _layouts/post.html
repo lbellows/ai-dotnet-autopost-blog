@@ -33,8 +33,24 @@ layout: default
 
     // Single shared tooltip appended to body to avoid h2 inline-flow issues
     var tooltip = document.createElement('div');
-    tooltip.textContent = 'Copied!';
-    tooltip.style.cssText = 'position:fixed;background:#0f172a;color:#fff;font-size:.72rem;padding:.15rem .5rem;border-radius:4px;pointer-events:none;white-space:nowrap;z-index:9999;display:none;';
+    tooltip.textContent = 'Link copied!';
+    tooltip.style.cssText = [
+      'position:fixed',
+      'background:#fff',
+      'color:var(--green-700,#15803d)',
+      'font-size:.75rem',
+      'font-weight:600',
+      'font-family:system-ui,sans-serif',
+      'padding:.3rem .65rem',
+      'border-radius:6px',
+      'border:1.5px solid rgba(22,163,74,.3)',
+      'box-shadow:0 4px 12px rgba(0,0,0,.08)',
+      'pointer-events:none',
+      'white-space:nowrap',
+      'z-index:9999',
+      'display:none',
+      'transition:opacity 120ms',
+    ].join(';');
     document.body.appendChild(tooltip);
 
     var hideTimer;
@@ -43,10 +59,10 @@ layout: default
       var btn = document.createElement('button');
       btn.className = 'h2-anchor';
       btn.setAttribute('aria-label', 'Copy link to section');
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+      btn.textContent = '#';
       h2.appendChild(btn);
 
-      btn.addEventListener('click', function (e) {
+      btn.addEventListener('click', function () {
         var url = location.origin + location.pathname + '#' + h2.id;
         navigator.clipboard.writeText(url).then(function () {
           var r = btn.getBoundingClientRect();

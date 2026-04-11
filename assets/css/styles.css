@@ -371,18 +371,31 @@ mark {
 .h2-anchor {
     display: inline-flex;
     align-items: center;
-    margin-left: .4em;
+    justify-content: center;
+    margin-left: .5em;
     opacity: 0;
-    transition: opacity 120ms;
-    color: var(--green-600);
-    font-size: .75em;
-    vertical-align: middle;
+    transition: opacity 150ms, background 150ms, color 150ms;
+    color: var(--green-700);
+    background: var(--green-100);
+    font-size: .5em;
+    font-weight: 700;
+    font-family: system-ui, sans-serif;
+    line-height: 1;
+    vertical-align: .35em;
     cursor: pointer;
-    border: none;
-    background: none;
-    padding: 0;
+    border: 1.5px solid rgba(22, 163, 74, 0.25);
+    border-radius: 5px;
+    padding: .25em .45em;
+    letter-spacing: .02em;
+    text-decoration: none;
+    user-select: none;
 }
 .post-content h2:hover .h2-anchor,
 .h2-anchor:focus {
     opacity: 1;
+}
+.h2-anchor:hover {
+    background: var(--green-600);
+    color: #fff;
+    border-color: var(--green-600);
 }
