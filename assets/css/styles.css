@@ -147,6 +147,37 @@ body {
     color: var(--green-600);
 }
 
+.pager-numbers {
+    display: flex;
+    gap: .35rem;
+    align-items: center;
+}
+
+.pager-numbers a,
+.pager-numbers .pager-current {
+    min-width: 2rem;
+    padding: .2rem .4rem;
+    border-radius: 6px;
+    text-align: center;
+    font-size: .9rem;
+}
+
+.pager-numbers a {
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.pager-numbers a:hover {
+    color: var(--green-600);
+    background: var(--green-100);
+}
+
+.pager-current {
+    color: var(--green-700);
+    background: var(--green-100);
+    font-weight: 700;
+}
+
 /* Small screens: single-column, comfortable spacing */
 @media (max-width: 719px) {
     body {
