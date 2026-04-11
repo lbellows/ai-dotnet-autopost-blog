@@ -23,9 +23,23 @@ public static class PromptBuilder
     private const string HumorGuidance =
         "Keep the tone professional yet witty—sprinkle in light, tasteful humor or asides that help the reader stay engaged.";
 
-    private const string ImageGuidance =
-        "Embed at least one Markdown image that works as a meme (reuse assets/images/robot.webp or another credited meme) " +
-        "with a descriptive, humorous alt text.";
+    // Curated subset of reliable imgflip top-100 template names.
+    private const string ImgflipTemplateList =
+        "Drake Hotline Bling, Distracted Boyfriend, Two Buttons, " +
+        "Expanding Brain, Change My Mind, Gru's Plan, " +
+        "One Does Not Simply, This Is Fine, " +
+        "Waiting Skeleton, Bernie I Am Once Again Asking, " +
+        "They're The Same Picture, Trade Offer, " +
+        "Panik Kalm Panik, Buff Doge vs. Cheems, " +
+        "Left Exit 12 Off Ramp, Third World Skeptical Kid";
+
+    private const string ImgflipGuidance =
+        "At the most relevant point in the article, output exactly one HTML comment on its own line in this format: " +
+        "<!-- meme: template=TEMPLATE_NAME, top=\"TOP TEXT\", bottom=\"BOTTOM TEXT\" --> " +
+        $"Pick TEMPLATE_NAME from this list (use the name exactly as written): {ImgflipTemplateList}. " +
+        "Choose whichever template best fits the tone of the story. " +
+        "Keep TOP TEXT and BOTTOM TEXT short (under 60 chars each), witty, and relevant to the post topic. " +
+        "Do not put the comment inside a code block.";
 
     public static PromptContext Build(GenerationSettings settings, DateOnly? today = null)
     {
@@ -48,8 +62,8 @@ public static class PromptBuilder
             $"- {TechGuidance}",
             $"- {HumorGuidance}",
         };
-        if (settings.MemeGuidanceEnabled)
-            guidanceLines.Add($"- {ImageGuidance}");
+        if (settings.ImgflipMemeEnabled)
+            guidanceLines.Add($"- {ImgflipGuidance}");
         guidanceLines.Add("- Cautious language for claims; avoid speculation and hallucinations.");
         guidanceLines.Add("- A **Further reading** section listing all source links as plain URLs.");
 

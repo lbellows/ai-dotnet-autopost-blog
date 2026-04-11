@@ -1,7 +1,30 @@
+using System.Text.RegularExpressions;
+
 namespace BlogGenerator.Core.Memes;
 
-public static class MemeExtractor
+public record ImgflipHint(string TemplateName, string TopText, string BottomText);
+
+public static partial class MemeExtractor
 {
+    // Matches: <!-- meme: template=drake, top="...", bottom="..." -->
+    [GeneratedRegex(
+        @"<!--\s*meme:\s*template=(?<template>[^,]+),\s*top=""(?<top>[^""]*)"",\s*bottom=""(?<bottom>[^""]*)""\s*-->",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex ImgflipHintPattern();
+
+    public static ImgflipHint? ExtractImgflipHint(string markdownBody)
+    {
+        var match = ImgflipHintPattern().Match(markdownBody);
+        if (!match.Success) return null;
+        return new ImgflipHint(
+            match.Groups["template"].Value.Trim(),
+            match.Groups["top"].Value.Trim(),
+            match.Groups["bottom"].Value.Trim());
+    }
+
+    public static string RemoveImgflipHint(string markdownBody) =>
+        ImgflipHintPattern().Replace(markdownBody, string.Empty).Trim();
+
     public static string? ExtractTldrLine(string markdownBody)
     {
         var lines = markdownBody.Split('\n');

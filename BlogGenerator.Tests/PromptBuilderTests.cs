@@ -69,10 +69,10 @@ public class PromptBuilderTests
     }
 
     [Fact]
-    public void MemeGuidanceIncludedWhenEnabled()
+    public void ImgflipGuidanceIncludedWhenEnabled()
     {
         var settings = CreateSettings();
-        settings.MemeGuidanceEnabled = true;
+        settings.ImgflipMemeEnabled = true;
         var ctx = PromptBuilder.Build(settings, today: new DateOnly(2025, 6, 2));
         Assert.Contains("meme", ctx.SystemPrompt, StringComparison.OrdinalIgnoreCase);
     }

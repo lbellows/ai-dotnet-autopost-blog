@@ -28,7 +28,7 @@ public sealed class GenerationSettings
     public double? FoundryTemperature { get; set; }
     public double? FoundryTopP { get; set; }
 
-    public bool MemeGuidanceEnabled { get; set; }
+    public bool ImgflipMemeEnabled { get; set; }
 
     public void Normalize()
     {

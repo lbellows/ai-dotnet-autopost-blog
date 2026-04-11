@@ -1,4 +1,5 @@
 using BlogGenerator.Core.Configuration;
+using BlogGenerator.Core.Memes;
 using BlogGenerator.Core.PostGeneration;
 using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Providers;
@@ -24,6 +25,7 @@ var configuration = new ConfigurationBuilder()
 // Register HttpClient for providers
 builder.Services.AddHttpClient<AnthropicProvider>();
 builder.Services.AddSingleton<AzureFoundryProvider>();
+builder.Services.AddHttpClient<ImgflipClient>();
 
 var host = builder.Build();
 
@@ -49,7 +51,11 @@ Console.WriteLine($"Repo root: {repoRoot}");
 var promptContext = PromptBuilder.Build(settings);
 var response = await provider.GeneratePostAsync(promptContext, settings);
 
-var (postPath, memeRelPath) = PostWriter.WritePost(response.Markdown, settings, usedModel: response.UsedModel);
+var imgflipClient = settings.ImgflipMemeEnabled
+    ? host.Services.GetRequiredService<ImgflipClient>()
+    : null;
+
+var (postPath, memeRelPath) = PostWriter.WritePost(response.Markdown, settings, usedModel: response.UsedModel, imgflipClient: imgflipClient);
 Console.WriteLine($"Post generated: {postPath}");
 if (memeRelPath != null)
     Console.WriteLine($"Meme generated: {memeRelPath}");

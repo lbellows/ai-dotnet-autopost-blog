@@ -17,7 +17,8 @@ public static partial class PostWriter
     public static (string FilePath, string? MemeRelPath) WritePost(
         string markdownBody,
         GenerationSettings settings,
-        string? usedModel = null)
+        string? usedModel = null,
+        ImgflipClient? imgflipClient = null)
     {
         markdownBody = StripLeadingInstructions(markdownBody);
 
@@ -38,12 +39,26 @@ public static partial class PostWriter
 
         var summary = MemeExtractor.ExtractTldrLine(markdownBody);
         string? memeRelPath = null;
-        if (settings.MemeGuidanceEnabled)
+
+        if (settings.ImgflipMemeEnabled && imgflipClient is not null)
         {
-            memeRelPath = MemeGenerator.GenerateContextualMeme(markdownBody, title, slug, settings);
-            if (memeRelPath != null)
-                markdownBody = MemeInjector.InjectMemeIntoMarkdown(markdownBody, memeRelPath, title, summary);
+            var hint = MemeExtractor.ExtractImgflipHint(markdownBody);
+            markdownBody = MemeExtractor.RemoveImgflipHint(markdownBody);
+            if (hint is not null)
+            {
+                var memeUrl = GenerateImgflipMemeAsync(imgflipClient, hint).GetAwaiter().GetResult();
+                if (memeUrl is not null)
+                {
+                    memeRelPath = memeUrl;
+                    markdownBody = MemeInjector.InjectMemeIntoMarkdown(markdownBody, memeUrl, title, summary);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Imgflip: no meme hint found in post; skipping meme.");
+            }
         }
+
 
         var postPath = Path.Combine(postsDir, $"{currentDay:yyyy-MM-dd}-{slug}.md");
 
@@ -139,6 +154,20 @@ public static partial class PostWriter
         }
 
         return string.Join("\n", lines);
+    }
+
+    private static async Task<string?> GenerateImgflipMemeAsync(ImgflipClient client, ImgflipHint hint)
+    {
+        try
+        {
+            var templates = await client.GetTemplatesAsync();
+            return await client.CaptionAsync(hint, templates);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Imgflip meme generation failed: {ex.Message}");
+            return null;
+        }
     }
 
     private static string EscapeYamlString(string value)
