@@ -9,6 +9,17 @@ public static class PromptBuilder
         "Highlight at least one of these ecosystems where relevant: .NET, Azure, or any AI related software. " +
         "Choose whichever best fits the story; covering all three is optional.";
 
+    private const string TitleGuidance =
+        "Title must be specific and varied in structure. " +
+        "Do NOT use the formula \"[Product]: What .NET/Azure engineers should [do/know/care about]\". " +
+        "Instead pick a structure that fits the story, for example: " +
+        "a direct declaration (\"GPT-5 Is Now GA\"), " +
+        "a numbered insight (\"5 Breaking Changes in .NET 10 You Can't Ignore\"), " +
+        "a question (\"Is Azure AI Foundry Ready for Production?\"), " +
+        "a contrast (\"Old Pattern vs. New: Migrating Azure SDK Auth in 2026\"), " +
+        "or a plain news headline (\"GitHub Copilot SDK Enters Public Preview\"). " +
+        "Rotate the structure—never repeat the same title formula across posts.";
+
     private const string HumorGuidance =
         "Keep the tone professional yet witty—sprinkle in light, tasteful humor or asides that help the reader stay engaged.";
 
@@ -30,7 +41,7 @@ public static class PromptBuilder
 
         var guidanceLines = new List<string>
         {
-            "- A single H1 title on the first line (non-clickbait, specific).",
+            $"- A single H1 title on the first line. {TitleGuidance}",
             "- Do not include a 'Published', word-count, audience, or tags metadata line in the body; front matter and the site layout already handle that.",
             "- A short **TL;DR** section.",
             "- Clear sections with practical takeaways (code or CLI snippets welcome).",
