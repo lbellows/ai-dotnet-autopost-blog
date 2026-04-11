@@ -34,14 +34,24 @@ public static class PromptBuilder
         "Left Exit 12 Off Ramp, Third World Skeptical Kid";
 
     // Box counts per template — drives how many pipe-separated texts GPT must supply.
+    // Format: Name(count[: box0 desc, box1 desc, ...])
     private const string ImgflipTemplateBoxCounts =
-        "Drake Hotline Bling(2), Distracted Boyfriend(3), Two Buttons(3), " +
-        "Expanding Brain(4), Change My Mind(2), Gru's Plan(4), " +
-        "One Does Not Simply(2), This Is Fine(2), " +
-        "Waiting Skeleton(2), Bernie I Am Once Again Asking(2), " +
-        "They're The Same Picture(3), Trade Offer(3), " +
-        "Panik Kalm Panik(3), Buff Doge vs. Cheems(4), " +
-        "Left Exit 12 Off Ramp(3), Third World Skeptical Kid(2)";
+        "Drake Hotline Bling(2: reject, prefer), " +
+        "Distracted Boyfriend(3: label on girlfriend, label on distracted guy, label on other woman), " +
+        "Two Buttons(3: button 1, button 2, sweating person label), " +
+        "Expanding Brain(4: small brain, medium brain, large brain, galaxy brain), " +
+        "Change My Mind(2: bold claim on sign, speaker label), " +
+        "Gru's Plan(4: step1, step2, step3, step3 goes wrong), " +
+        "One Does Not Simply(2: 'One does not simply...', the thing you cannot do), " +
+        "This Is Fine(2: situation label, character label), " +
+        "Waiting Skeleton(2: what you are waiting for, how long it takes), " +
+        "Bernie I Am Once Again Asking(2: who is asking, what they are asking for), " +
+        "They're The Same Picture(3: top banner instruction, left card text, right card text), " +
+        "Trade Offer(3: I receive, you receive, trader label), " +
+        "Panik Kalm Panik(3: first panik, kalm, second panik), " +
+        "Buff Doge vs. Cheems(4: buff doge label, buff doge caption, cheems label, cheems caption), " +
+        "Left Exit 12 Off Ramp(3: exit you ignore, exit you take, driver label), " +
+        "Third World Skeptical Kid(2: claim, skeptical reaction)";
 
     private const string ImgflipGuidance =
         "At the most relevant point in the article, output exactly one HTML comment on its own line in this format: " +
