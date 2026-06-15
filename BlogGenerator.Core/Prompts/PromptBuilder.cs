@@ -23,46 +23,50 @@ public static class PromptBuilder
     private const string HumorGuidance =
         "Keep the tone professional yet witty—sprinkle in light, tasteful humor or asides that help the reader stay engaged.";
 
-    // Curated subset of reliable imgflip top-100 template names.
-    private const string ImgflipTemplateList =
-        "Drake Hotline Bling, Distracted Boyfriend, Two Buttons, " +
-        "Expanding Brain, Change My Mind, Gru's Plan, " +
-        "One Does Not Simply, This Is Fine, " +
-        "Waiting Skeleton, Bernie I Am Once Again Asking, " +
-        "They're The Same Picture, Trade Offer, " +
-        "Panik Kalm Panik, Buff Doge vs. Cheems, " +
-        "Left Exit 12 Off Ramp, Third World Skeptical Kid";
+    // Curated subset of reliable imgflip top-100 templates, each with its box count
+    // and per-box descriptions. The descriptions drive how many pipe-separated texts
+    // GPT must supply. This is the single source of truth for the meme catalog; the
+    // prompt presents it in a shuffled order each run (see ImgflipGuidance) so the
+    // model doesn't keep defaulting to whichever template sits at the top of the list.
+    internal static readonly IReadOnlyList<string> ImgflipTemplateCatalog =
+    [
+        "Drake Hotline Bling(2: reject, prefer)",
+        "Distracted Boyfriend(3: label on girlfriend, label on distracted guy, label on other woman)",
+        "Two Buttons(3: button 1, button 2, sweating person label)",
+        "Expanding Brain(4: small brain, medium brain, large brain, galaxy brain)",
+        "Change My Mind(2: bold claim on sign, speaker label)",
+        "Gru's Plan(4: step1, step2, step3, step3 goes wrong)",
+        "One Does Not Simply(2: 'One does not simply...', the thing you cannot do)",
+        "This Is Fine(2: situation label, character label)",
+        "Waiting Skeleton(2: what you are waiting for, how long it takes)",
+        "Bernie I Am Once Again Asking(2: who is asking, what they are asking for)",
+        "They're The Same Picture(3: top banner instruction, left card text, right card text)",
+        "Trade Offer(3: I receive, you receive, trader label)",
+        "Panik Kalm Panik(3: first panik, kalm, second panik)",
+        "Buff Doge vs. Cheems(4: buff doge label, buff doge caption, cheems label, cheems caption)",
+        "Left Exit 12 Off Ramp(3: exit you ignore, exit you take, driver label)",
+        "Third World Skeptical Kid(2: claim, skeptical reaction)",
+    ];
 
-    // Box counts per template — drives how many pipe-separated texts GPT must supply.
-    // Format: Name(count[: box0 desc, box1 desc, ...])
-    private const string ImgflipTemplateBoxCounts =
-        "Drake Hotline Bling(2: reject, prefer), " +
-        "Distracted Boyfriend(3: label on girlfriend, label on distracted guy, label on other woman), " +
-        "Two Buttons(3: button 1, button 2, sweating person label), " +
-        "Expanding Brain(4: small brain, medium brain, large brain, galaxy brain), " +
-        "Change My Mind(2: bold claim on sign, speaker label), " +
-        "Gru's Plan(4: step1, step2, step3, step3 goes wrong), " +
-        "One Does Not Simply(2: 'One does not simply...', the thing you cannot do), " +
-        "This Is Fine(2: situation label, character label), " +
-        "Waiting Skeleton(2: what you are waiting for, how long it takes), " +
-        "Bernie I Am Once Again Asking(2: who is asking, what they are asking for), " +
-        "They're The Same Picture(3: top banner instruction, left card text, right card text), " +
-        "Trade Offer(3: I receive, you receive, trader label), " +
-        "Panik Kalm Panik(3: first panik, kalm, second panik), " +
-        "Buff Doge vs. Cheems(4: buff doge label, buff doge caption, cheems label, cheems caption), " +
-        "Left Exit 12 Off Ramp(3: exit you ignore, exit you take, driver label), " +
-        "Third World Skeptical Kid(2: claim, skeptical reaction)";
-
-    private const string ImgflipGuidance =
-        "At the most relevant point in the article, output exactly one HTML comment on its own line in this format: " +
-        "<!-- meme: template=TEMPLATE_NAME, texts=\"TEXT0|TEXT1|...\" --> " +
-        $"Pick TEMPLATE_NAME from this list — the number in parentheses is how many pipe-separated texts to supply: {ImgflipTemplateBoxCounts}. " +
-        "Choose whichever template best fits the tone of the story. " +
-        "Supply exactly as many texts as the box count requires, each under 60 chars, witty, and relevant to the post topic. " +
-        "Do not put the comment inside a code block.";
-
-    public static PromptContext Build(GenerationSettings settings, DateOnly? today = null)
+    // Builds the meme guidance with the template catalog presented in a freshly
+    // shuffled order so the model is nudged toward variety instead of repeatedly
+    // picking the first familiar option (it was over-favoring "Two Buttons").
+    internal static string ImgflipGuidance(Random rng)
     {
+        var shuffled = ImgflipTemplateCatalog.OrderBy(_ => rng.Next()).ToList();
+        return
+            "At the most relevant point in the article, output exactly one HTML comment on its own line in this format: " +
+            "<!-- meme: template=TEMPLATE_NAME, texts=\"TEXT0|TEXT1|...\" --> " +
+            $"Pick TEMPLATE_NAME from this list — the number in parentheses is how many pipe-separated texts to supply: {string.Join(", ", shuffled)}. " +
+            "Deliberately vary your choice across posts: pick the template whose format best matches the story's structure " +
+            "(e.g., a tradeoff, a progression, a false dilemma, a slow wait) rather than defaulting to the most familiar one. " +
+            "Supply exactly as many texts as the box count requires, each under 60 chars, witty, and relevant to the post topic. " +
+            "Do not put the comment inside a code block.";
+    }
+
+    public static PromptContext Build(GenerationSettings settings, DateOnly? today = null, Random? rng = null)
+    {
+        rng ??= Random.Shared;
         var currentDay = today ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var recentStart = currentDay.AddDays(-settings.RecentWindowDays);
         var modeText = ModeInstructions(currentDay, settings.RecentWindowDays);
@@ -83,7 +87,7 @@ public static class PromptBuilder
             $"- {HumorGuidance}",
         };
         if (settings.ImgflipMemeEnabled)
-            guidanceLines.Add($"- {ImgflipGuidance}");
+            guidanceLines.Add($"- {ImgflipGuidance(rng)}");
         guidanceLines.Add("- Cautious language for claims; avoid speculation and hallucinations.");
         guidanceLines.Add("- A **Further reading** section listing all source links as plain URLs.");
 

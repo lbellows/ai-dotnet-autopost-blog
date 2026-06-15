@@ -2,7 +2,9 @@ name: Daily AI Blog Post
 
 on:
   schedule:
-    - cron: "15 11 * * *"   # 11:15 UTC daily (~07:15 ET)
+    # 11:15 UTC (~07:15 ET) on Tue & Thu (deep-dive posts) and Sun (week-in-review synopsis).
+    # The generator switches to synopsis mode automatically on Sundays (see PromptBuilder.ModeInstructions).
+    - cron: "15 11 * * 2,4,0"
   workflow_dispatch:
     inputs:
       ai_provider:

@@ -13,7 +13,7 @@ The blog generator is a C# .NET 10 solution at the repo root.
 - Provider selection at runtime via CLI arg or `AI_PROVIDER` env var: `anthropic` or `foundry`
 
 ## Project Structure & Module Organization
-Jekyll powers this GitHub Pages blog. `_config.yml` controls metadata, `_includes/` holds partials, and `index.html` is the landing page. Assets sit in `assets/css/styles.css` and `assets/images/`. Automation lives in the root-level `BlogGenerator`, `BlogGenerator.Core`, and `BlogGenerator.Tests` projects. The generator creates `_posts/` at runtime (left untracked); keep filenames `YYYY-MM-DD-title.md` so Jekyll picks them up.
+Jekyll powers this GitHub Pages blog. `_config.yml` controls metadata, `_includes/` holds partials, and `index.html` is the landing page. Assets sit in `assets/css/styles.css` and `assets/images/`. Automation lives in the root-level `BlogGenerator`, `BlogGenerator.Core`, and `BlogGenerator.Tests` projects. The generator writes new posts into `_posts/`, and the daily workflow commits them (the directory is tracked in git, not ignored); keep filenames `YYYY-MM-DD-title.md` so Jekyll picks them up.
 
 ## Build, Test, and Development Commands
 - `dotnet build BlogGenerator.sln` builds the solution.

@@ -123,14 +123,15 @@ Manual test: Use the workflow's Run workflow button to test once you add the sec
 
 # Content cadence & tone
 
-- Weekday posts now dive deep on one breaking story from the most recent `RecentWindowDays` window.
-- Sunday runs switch to a weekly synopsis that blends news and forward-looking tips (e.g., 2025 planning).
+- Posts publish Tue & Thu (deep dive on one breaking story from the most recent `RecentWindowDays` window) — see the cron in `.github/workflows/daily-post-rag.yml`.
+- Sunday runs switch to a weekly synopsis that blends news and forward-looking tips; the generator detects Sunday automatically.
 - Each post highlights at least one of .NET, Azure, or GitHub while keeping a light, professional sense of humor.
-- The generator prompts for a meme image (reuse `assets/images/robot.webp` for now) to keep things playful, and the same setting drives whether we render a contextual meme into each post.
-- During generation a contextual meme is rendered from `assets/images/robot.webp` with captions pulled from the title and TL;DR.
+- Memes are generated via the imgflip API (`ImgflipMemeEnabled` in `appsettings.json`). The model emits a `<!-- meme: template=..., texts="..." -->` comment choosing one template from a curated catalog; `ImgflipClient` captions that template through imgflip and the rendered image URL is spliced back into the post at the model's chosen spot. Requires `IMGFLIP_USERNAME`/`IMGFLIP_PASSWORD` secrets; if absent or the call fails, the post is published meme-free.
+- The meme catalog (`PromptBuilder.ImgflipTemplateCatalog`) is presented to the model in a freshly shuffled order each run so it varies its pick instead of defaulting to one template (it had been over-using "Two Buttons"). To add/remove templates, edit that single list — name and box descriptions live together.
 
 # Future
 
 * check if search tool is getting recent items in azure models
 * figure out how to monetize
 * revisit automatic meme generation once styling and asset library are settled
+* `search.json` is loaded in full on the client (title + excerpt + tags for every post). Fine now (~260 posts); revisit once it grows large — trim per-post payload or move to a prebuilt/lazy index. No storage/build concern: repo and Jekyll build stay well within GitHub Pages limits for years at the current rate.

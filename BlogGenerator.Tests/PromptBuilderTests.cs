@@ -78,6 +78,36 @@ public class PromptBuilderTests
     }
 
     [Fact]
+    public void ImgflipGuidanceListsEveryTemplateRegardlessOfShuffle()
+    {
+        var guidance = PromptBuilder.ImgflipGuidance(new Random(12345));
+        foreach (var template in PromptBuilder.ImgflipTemplateCatalog)
+        {
+            // Each catalog entry is "Name(boxes...)"; assert the human-readable name survives.
+            var name = template[..template.IndexOf('(')];
+            Assert.Contains(name, guidance);
+        }
+    }
+
+    [Fact]
+    public void ImgflipGuidanceShuffleVariesTemplateOrderAcrossSeeds()
+    {
+        // Different RNG seeds should present the templates in a different order, which is
+        // what breaks the model's bias toward whatever sits first in a fixed list.
+        var a = PromptBuilder.ImgflipGuidance(new Random(1));
+        var b = PromptBuilder.ImgflipGuidance(new Random(2));
+        Assert.NotEqual(a, b);
+    }
+
+    [Fact]
+    public void ImgflipGuidanceShuffleIsDeterministicForAGivenSeed()
+    {
+        Assert.Equal(
+            PromptBuilder.ImgflipGuidance(new Random(42)),
+            PromptBuilder.ImgflipGuidance(new Random(42)));
+    }
+
+    [Fact]
     public void RecentStartDateIsCorrectDaysBack()
     {
         var settings = CreateSettings();

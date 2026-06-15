@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-14
+- Reduced the publishing cadence from daily to Tue/Thu deep-dive posts plus the Sunday week-in-review synopsis by changing the workflow cron to `15 11 * * 2,4,0` (the generator already switches to synopsis mode automatically on Sundays).
+- Widened `RecentWindowDays` from 2 to 5 in `appsettings.json` so the Tuesday run still covers news from the preceding Friday–Monday gap under the new schedule.
+- Noted the client-side `search.json` growth limit as a future task (see README Notes); no technical archiving needed — repo/build are well within GitHub Pages limits.
+- Fixed meme template mode-collapse: the imgflip template catalog is now presented to the model in a per-run shuffled order with an explicit "vary your choice" instruction, so it stops defaulting to "Two Buttons". Consolidated the duplicated name/box-count lists into a single `PromptBuilder.ImgflipTemplateCatalog` source of truth (removing the unused `ImgflipTemplateList` const) and added tests covering the shuffle.
+- Corrected stale docs: `_posts/` is tracked in git and committed by the workflow (AGENTS.md previously said "left untracked"), and memes are rendered via the imgflip API from a model-chosen template (README previously implied they came from `assets/images/robot.webp`, which is only the site logo).
+
 ## 2026-03-13
 - Flattened the .NET generator layout to the repo root (`BlogGenerator.sln`, `BlogGenerator/`, `BlogGenerator.Core/`, `BlogGenerator.Tests/`) and updated build, test, workflow, and docs paths to match.
 - Removed the obsolete Python generator code, shared Python utilities, `requirements.txt`, caches, and virtualenv artifacts now that the C# rewrite is the only supported pipeline.
