@@ -152,9 +152,12 @@ public static class PromptBuilder
         var items = new List<string>
         {
             $"Use the web_search tool to find reputable sources. For NEWS MODE, the lead story's primary announcement " +
-            $"must be dated between {recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd}. If nothing in that date range " +
-            $"qualifies, do NOT reframe an older announcement as new — write an EVERGREEN piece with no time-sensitive " +
-            $"framing instead. Supporting/context sources may be older in either mode.",
+            $"must be dated between {recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd}. Before concluding that no fresh " +
+            $"story exists, make AT LEAST 4 distinct search attempts with genuinely different queries and angles — e.g. " +
+            $"vendor engineering blogs (Microsoft/Azure/OpenAI/Anthropic/GitHub), official changelogs and release notes, " +
+            $"GitHub releases, and developer news aggregators — not 4 rewordings of the same query. Only after that honest " +
+            $"effort, if nothing in the date range qualifies, do NOT reframe an older announcement as new — write an " +
+            $"EVERGREEN piece with no time-sensitive framing instead. Supporting/context sources may be older in either mode.",
             ModeInstructions(today, settings.RecentWindowDays),
             "Synthesize the key points that matter to engineers (cost, latency, APIs, integration steps).",
             "Cite sources inline where appropriate and list all links at the end in a 'Further reading' list.",
