@@ -32,7 +32,7 @@ public static class PromptBuilder
     [
         "Drake Hotline Bling(2: reject, prefer)",
         "Distracted Boyfriend(3: label on girlfriend, label on distracted guy, label on other woman)",
-        "Two Buttons(3: button 1, button 2, sweating person label)",
+        "Two Buttons(3: button 1, button 2, who faces the dilemma — name them, don't describe the sweating)",
         "Expanding Brain(4: small brain, medium brain, large brain, galaxy brain)",
         "Change My Mind(2: bold claim on sign, speaker label)",
         "Gru's Plan(4: step1, step2, step3, step3 goes wrong)",
@@ -61,6 +61,8 @@ public static class PromptBuilder
             "Deliberately vary your choice across posts: pick the template whose format best matches the story's structure " +
             "(e.g., a tradeoff, a progression, a false dilemma, a slow wait) rather than defaulting to the most familiar one. " +
             "Supply exactly as many texts as the box count requires, each under 60 chars, witty, and relevant to the post topic. " +
+            "Captions should add meaning the picture doesn't already convey (the situation, the stakes, who is involved) — " +
+            "do not narrate what the image visibly shows (e.g. don't label a sweating character 'sweating', or a burning room 'on fire'). " +
             "Do not put the comment inside a code block.";
     }
 
