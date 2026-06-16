@@ -16,8 +16,8 @@ public class PromptBuilderTests
         AnthropicModel = "claude-sonnet-4-6",
         AnthropicMaxTokens = 4096,
         AnthropicTemperature = 0.9,
-        FoundryModels = ["gpt-4.1-mini", "gpt-5.2-chat"],
-        FoundryDefaultModel = "gpt-5.2-chat",
+        FoundryModels = ["gpt-5.4-mini", "gpt-5-mini"],
+        FoundryDefaultModel = "gpt-5.4-mini",
         FoundryMaxTokens = 4096,
     };
 

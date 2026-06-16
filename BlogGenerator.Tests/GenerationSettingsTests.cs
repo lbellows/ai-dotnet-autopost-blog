@@ -16,8 +16,8 @@ public class GenerationSettingsTests
         AnthropicModel = "claude-sonnet-4-6",
         AnthropicMaxTokens = 4096,
         AnthropicTemperature = 0.9,
-        FoundryModels = ["gpt-4.1-mini", "gpt-5.2-chat"],
-        FoundryDefaultModel = "gpt-5.2-chat",
+        FoundryModels = ["gpt-5.4-mini", "gpt-5-mini"],
+        FoundryDefaultModel = "gpt-5.4-mini",
         FoundryMaxTokens = 4096,
     };
 
@@ -60,7 +60,7 @@ public class GenerationSettingsTests
 
         var candidates = AzureFoundryProvider.BuildModelCandidates(settings);
 
-        Assert.Equal("gpt-5.2-chat", candidates[0]);
-        Assert.Equal(["gpt-5.2-chat", "gpt-4.1-mini"], candidates);
+        Assert.Equal("gpt-5.4-mini", candidates[0]);
+        Assert.Equal(["gpt-5.4-mini", "gpt-5-mini"], candidates);
     }
 }
