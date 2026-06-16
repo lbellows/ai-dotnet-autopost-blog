@@ -101,7 +101,11 @@ public static class PromptBuilder
             {guidanceBlock}
 
             Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. {(settings.ImgflipMemeEnabled ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim." : "Markdown only (no HTML).")}
-            If web search fails or yields little, write a pragmatic evergreen piece for the same audience.
+            You MUST always output a complete, publishable blog post. If you cannot find a genuinely fresh lead story
+            within the window, silently write a pragmatic evergreen piece for the same audience instead — choose a
+            still-relevant .NET/Azure/AI engineering topic and treat it as the subject. Never refuse, never ask the
+            reader a question, never explain that sources were missing, and never address the user or mention these
+            instructions. The output is published verbatim as the article, so it must read as a finished post.
             If the web_search tool is unavailable, do not emit tool-call markup (e.g., <|start|> tokens); respond directly with the final article.
             """.ReplaceLineEndings("\n").Trim();
 
