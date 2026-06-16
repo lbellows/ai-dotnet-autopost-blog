@@ -68,4 +68,37 @@ public class PostWriterTests
         var result = PostWriter.StripLeadingPostMetadata(input);
         Assert.Equal(input, result);
     }
+
+    [Fact]
+    public void NormalizeBrokenBulletsRejoinsLoneMarkerWithNextLine()
+    {
+        var input = "Intro\n-\nFirst item\n-\nSecond item\n";
+        var result = PostWriter.NormalizeBrokenBullets(input);
+        Assert.Equal("Intro\n- First item\n- Second item\n", result);
+    }
+
+    [Fact]
+    public void NormalizeBrokenBulletsRejoinsAcrossBlankLine()
+    {
+        var input = "-\n\nItem text";
+        var result = PostWriter.NormalizeBrokenBullets(input);
+        Assert.Equal("- Item text", result);
+    }
+
+    [Fact]
+    public void NormalizeBrokenBulletsPreservesWellFormedLists()
+    {
+        var input = "- First\n- Second\n  - Nested";
+        var result = PostWriter.NormalizeBrokenBullets(input);
+        Assert.Equal(input, result);
+    }
+
+    [Fact]
+    public void NormalizeBrokenBulletsPreservesHorizontalRule()
+    {
+        // A "---" thematic break is not a lone bullet marker and must survive untouched.
+        var input = "Above\n\n---\n\nBelow";
+        var result = PostWriter.NormalizeBrokenBullets(input);
+        Assert.Equal(input, result);
+    }
 }

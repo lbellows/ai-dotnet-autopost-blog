@@ -11,6 +11,10 @@ public static partial class PostWriter
     [GeneratedRegex(@"^\s*#")]
     private static partial Regex HeadingRegex();
 
+    // Matches a list-item line that is just a bullet marker with no content (e.g. "-", "* ", "+").
+    [GeneratedRegex(@"^(\s*)([-*+])\s*$")]
+    private static partial Regex EmptyBulletRegex();
+
     private static readonly TimeZoneInfo EasternTimeZone =
         TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
@@ -21,6 +25,7 @@ public static partial class PostWriter
         ImgflipClient? imgflipClient = null)
     {
         markdownBody = StripLeadingInstructions(markdownBody);
+        markdownBody = NormalizeBrokenBullets(markdownBody);
 
         var currentDay = DateOnly.FromDateTime(DateTime.UtcNow);
         var postsDir = Path.Combine(settings.RepoRoot, "_posts");
@@ -116,6 +121,39 @@ public static partial class PostWriter
         return foundHeading
             ? string.Join("\n", cleaned).TrimStart('\n')
             : markdownBody.Trim();
+    }
+
+    // The model sometimes emits a bullet marker alone on one line with the item text on the next
+    // line, which Markdown renders as a stray "-" rather than a list. Rejoin those onto one line.
+    internal static string NormalizeBrokenBullets(string markdownBody)
+    {
+        var lines = markdownBody.ReplaceLineEndings("\n").Split('\n');
+        var result = new List<string>(lines.Length);
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var match = EmptyBulletRegex().Match(lines[i]);
+            if (match.Success)
+            {
+                // Find the next non-blank line and attach it as the bullet's content.
+                var j = i + 1;
+                while (j < lines.Length && string.IsNullOrWhiteSpace(lines[j]))
+                    j++;
+
+                if (j < lines.Length)
+                {
+                    var indent = match.Groups[1].Value;
+                    var marker = match.Groups[2].Value;
+                    result.Add($"{indent}{marker} {lines[j].TrimStart()}");
+                    i = j;
+                    continue;
+                }
+            }
+
+            result.Add(lines[i]);
+        }
+
+        return string.Join("\n", result);
     }
 
     internal static string StripLeadingTitleHeading(string markdownBody)

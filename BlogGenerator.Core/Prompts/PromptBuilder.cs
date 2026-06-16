@@ -81,7 +81,7 @@ public static class PromptBuilder
         {
             $"- A single H1 title on the first line. {TitleGuidance}",
             "- Do not include a 'Published', word-count, audience, or tags metadata line in the body; front matter and the site layout already handle that.",
-            "- A short **TL;DR** section.",
+            "- Open with a short summary paragraph immediately after the title (no 'TL;DR' or 'Summary' label or heading — just lead with the prose).",
             "- Clear sections with practical takeaways (code or CLI snippets welcome).",
             $"- {TechGuidance}",
             $"- {HumorGuidance}",
@@ -128,8 +128,10 @@ public static class PromptBuilder
             return "Sunday is synopsis day: weave the freshest breaking stories into a cohesive weekly roundup " +
                    "that also previews what's next (e.g., 2025 readiness tips, roadmap considerations).";
 
-        return $"Pick one laser-focused story or product update from the last {recentWindowDays} day(s) " +
-               "and dive deep into its implications. Avoid broad grab-bag summaries.";
+        return $"Pick one laser-focused story or product update whose primary announcement happened within the last {recentWindowDays} day(s) " +
+               "and dive deep into its implications. The news hook MUST be genuinely fresh: do not present a months-old release " +
+               "(e.g. a stable 1.0 that shipped weeks or months ago) as if it just happened. Older background context is fine for " +
+               "framing, but the lead must be a development from the window. Avoid broad grab-bag summaries.";
     }
 
     public static List<string> UserInstructionItems(
@@ -137,8 +139,10 @@ public static class PromptBuilder
     {
         var items = new List<string>
         {
-            $"Use the web_search tool to find 4-6 fresh, reputable sources published between " +
-            $"{recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd} (or as close as possible).",
+            $"Use the web_search tool to find 4-6 fresh, reputable sources. The lead story's primary announcement " +
+            $"must be dated between {recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd}; if you cannot find a genuinely " +
+            $"recent development, pick a different topic rather than reframing an older one as new. " +
+            $"Supporting/context sources may be older.",
             ModeInstructions(today, settings.RecentWindowDays),
             "Synthesize the key points that matter to engineers (cost, latency, APIs, integration steps).",
             "Cite sources inline where appropriate and list all links at the end in a 'Further reading' list.",
@@ -201,7 +205,7 @@ public static class PromptBuilder
                     {
                         ["type"] = "text",
                         ["text"] = "The previous response was empty. Provide the complete Markdown article now with an H1 title, " +
-                                   "a **TL;DR** section, practical sections, and a **Further reading** list. Do not mention tool usage."
+                                   "a short opening summary paragraph (no 'TL;DR' label), practical sections, and a **Further reading** list. Do not mention tool usage."
                     }
                 }
             }
@@ -215,7 +219,7 @@ public static class PromptBuilder
             : "The previous response did not deliver the final Markdown article.";
 
         var text = $"{intro} Web search is unavailable in this environment. Reply now with a complete Markdown post " +
-                   "that includes an H1 title, a **TL;DR** section, practical sections, and a **Further reading** list. " +
+                   "that includes an H1 title, a short opening summary paragraph (no 'TL;DR' label), practical sections, and a **Further reading** list. " +
                    "Do not emit tool-call markup, <|...|> tokens, or describe the attempt; output only the article.";
 
         return
