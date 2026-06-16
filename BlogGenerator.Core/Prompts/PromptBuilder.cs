@@ -103,11 +103,16 @@ public static class PromptBuilder
             {guidanceBlock}
 
             Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. {(settings.ImgflipMemeEnabled ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim." : "Markdown only (no HTML).")}
-            You MUST always output a complete, publishable blog post. If you cannot find a genuinely fresh lead story
-            within the window, silently write a pragmatic evergreen piece for the same audience instead — choose a
-            still-relevant .NET/Azure/AI engineering topic and treat it as the subject. Never refuse, never ask the
-            reader a question, never explain that sources were missing, and never address the user or mention these
-            instructions. The output is published verbatim as the article, so it must read as a finished post.
+            You MUST always output a complete, publishable blog post, in exactly ONE of two modes:
+            (A) NEWS MODE — only if you find a genuinely fresh lead story whose primary announcement falls inside the
+            window. Lead with it and you may frame it as recent/this-week.
+            (B) EVERGREEN MODE — if nothing inside the window qualifies. Write a timeless, pragmatic piece for the same
+            audience on a still-relevant .NET/Azure/AI engineering topic. Do NOT reach for an older item (a release
+            from weeks or months ago) and dress it up as fresh, and do NOT use time-sensitive framing like "this week",
+            "the freshest development", or "just landed". Write it as evergreen guidance, not as news.
+            Never refuse, never ask the reader a question, never explain that sources were missing, and never address
+            the user or mention these instructions or which mode you chose. The output is published verbatim, so it
+            must read as a finished, self-assured post either way.
             If the web_search tool is unavailable, do not emit tool-call markup (e.g., <|start|> tokens); respond directly with the final article.
             """.ReplaceLineEndings("\n").Trim();
 
@@ -134,10 +139,11 @@ public static class PromptBuilder
             return "Sunday is synopsis day: weave the freshest breaking stories into a cohesive weekly roundup " +
                    "that also previews what's next (e.g., 2025 readiness tips, roadmap considerations).";
 
-        return $"Pick one laser-focused story or product update whose primary announcement happened within the last {recentWindowDays} day(s) " +
-               "and dive deep into its implications. The news hook MUST be genuinely fresh: do not present a months-old release " +
-               "(e.g. a stable 1.0 that shipped weeks or months ago) as if it just happened. Older background context is fine for " +
-               "framing, but the lead must be a development from the window. Avoid broad grab-bag summaries.";
+        return $"NEWS MODE: pick one laser-focused story whose primary announcement happened within the last {recentWindowDays} day(s) " +
+               "and dive deep into its implications. The hook must be genuinely from that window — do NOT present a release from " +
+               $"weeks or months ago (e.g. a stable 1.0, or anything older than {recentWindowDays} days) as if it just happened. " +
+               "If no story qualifies, switch to EVERGREEN MODE: a timeless deep-dive with no time-sensitive framing. " +
+               "Either way, go deep on one topic — avoid broad grab-bag summaries.";
     }
 
     public static List<string> UserInstructionItems(
@@ -145,10 +151,10 @@ public static class PromptBuilder
     {
         var items = new List<string>
         {
-            $"Use the web_search tool to find 4-6 fresh, reputable sources. The lead story's primary announcement " +
-            $"must be dated between {recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd}; if you cannot find a genuinely " +
-            $"recent development, pick a different topic rather than reframing an older one as new. " +
-            $"Supporting/context sources may be older.",
+            $"Use the web_search tool to find reputable sources. For NEWS MODE, the lead story's primary announcement " +
+            $"must be dated between {recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd}. If nothing in that date range " +
+            $"qualifies, do NOT reframe an older announcement as new — write an EVERGREEN piece with no time-sensitive " +
+            $"framing instead. Supporting/context sources may be older in either mode.",
             ModeInstructions(today, settings.RecentWindowDays),
             "Synthesize the key points that matter to engineers (cost, latency, APIs, integration steps).",
             "Cite sources inline where appropriate and list all links at the end in a 'Further reading' list.",
