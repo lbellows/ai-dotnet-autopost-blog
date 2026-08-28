@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-28
+- Added a Venice.ai provider (`dotnet run --project BlogGenerator -- venice`) targeting Venice's OpenAI-compatible chat-completions endpoint with grounding via provider-side web search (`venice_parameters.enable_web_search`).
+- Split Venice generation into a brain/writer pair because Venice's web search is a single retrieval pass per request rather than an agentic tool loop: `grok-4-6` runs one grounded research pass per source angle (vendor blogs, changelogs, GitHub releases, news coverage) and `claude-sonnet-5` writes the post from the merged dossier with search off. Clearing `VeniceWriterModel` collapses this to a single search-and-write call.
+- Both Venice stages fall back through an ordered model list, and a failed research pass is logged and skipped so the remaining passes still ground the post.
+- Stripped Venice's inline superscript citation markers (`^4^`, `^1,5,8^`) and any surviving `<think>` block from model output before posts are written.
+- Extracted the shared post-style checklist into `PromptBuilder.GuidanceBlock` (now carried on `PromptContext`) so the Venice writer stage and the single-call providers stay in sync on house style.
+- Taught the generator to load a gitignored `.env` at startup, with real environment variables taking priority, and added `.env.example`. Broadened `.gitignore` to cover `.env.*`, `.claude/settings.local.json`, and `appsettings.*.local.json`.
+- Added `venice` to the daily workflow's provider choice, wired `VENICE_API_KEY` through both steps, and added its missing-secret guard.
+- Stopped writing posts with a UTF-8 byte-order mark in front of the YAML front matter; `PostWriter` now uses a BOM-free UTF-8 encoding. Existing posts still carry their original BOM.
+- Reworked tag inference, which was emitting filler like `between`, `bring`, `actually`, and `already` alongside source domains like `github.blog`. Candidates are now ranked by whether they look like names — capitalized mid-sentence in body prose, or carrying a digit/dot/hyphen — before whole-body frequency, instead of by alphabetical tiebreak over heading tokens alone. Salient body terms also compete as candidates so conversational headings no longer starve the list, URLs are excluded from that signal, and domain-shaped tokens are rejected outright (with `.net` and `asp.net` explicitly spared). The generic-English stopword list was expanded to match.
+- Added tests for Venice model-candidate ordering, citation-marker and thinking-block cleanup, response/citation parsing, dossier assembly, and the research/writer prompts, plus a test asserting the shipped `appsettings.json` still satisfies `GenerationSettings.Validate()`.
+
 ## 2026-06-14
 - Reduced the publishing cadence from daily to Tue/Thu deep-dive posts plus the Sunday week-in-review synopsis by changing the workflow cron to `15 11 * * 2,4,0` (the generator already switches to synopsis mode automatically on Sundays).
 - Widened `RecentWindowDays` from 2 to 5 in `appsettings.json` so the Tuesday run still covers news from the preceding Friday–Monday gap under the new schedule.

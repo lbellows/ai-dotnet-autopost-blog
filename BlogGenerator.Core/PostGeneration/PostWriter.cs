@@ -18,6 +18,10 @@ public static partial class PostWriter
     private static readonly TimeZoneInfo EasternTimeZone =
         TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
+    // Encoding.UTF8 emits a byte-order mark, which lands in front of the YAML front matter
+    // delimiter. Jekyll tolerates it, but it makes the raw files awkward to diff and grep.
+    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+
     public static (string FilePath, string? MemeRelPath) WritePost(
         string markdownBody,
         GenerationSettings settings,
@@ -90,7 +94,7 @@ public static partial class PostWriter
         sb.AppendLine();
         sb.Append(markdownBody);
 
-        File.WriteAllText(postPath, sb.ToString(), Encoding.UTF8);
+        File.WriteAllText(postPath, sb.ToString(), Utf8NoBom);
         Console.WriteLine($"Wrote {postPath}");
 
         return (postPath, memeRelPath);
