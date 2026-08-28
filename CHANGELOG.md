@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-28 — generator refactor
+- Consolidated provider plumbing into `BlogGenerator.Core/Providers/ProviderSupport.cs`. Resolving a secret from the environment, redacting that secret out of error messages, ordering the primary-then-fallbacks model list, and posting a JSON body with the API's own error text on failure were each written two or three times across the Anthropic, Foundry, and Venice providers; they are now written once.
+- Collapsed Venice's two generation paths — the single search-and-write call and the brain/writer pair — onto one `WriteAsync` helper, and removed `PromptBuilder.BuildChatMessages`, which built the same request in a different message shape than the rest of the provider.
+- Extracted the length/output-format rule and the "never break character" rule that the single-call and Venice writer system prompts both carry. Prompt text is unchanged word for word across all 48 generated variants; only the hard-wrapping of one paragraph moved.
+- Trimmed `PromptContext` to the five members providers actually read. `ModeInstructions`, `PrimaryLinkLine`, and `UserInstructionItems` were assembled on every run but only ever read back by tests, which now assert against the prompt that actually ships.
+- Removed dead code: `PromptBuilder.EmptyResponseRetryInstruction` and `MarkupRetryInstruction` (no callers), `MemeExtractor.ExtractTldrLine` (no callers — the house style prompt bans TL;DR labels outright), `PostWriter.HeadingRegex`, and the never-read `url`/`box_count`/`page_url` fields on the imgflip DTOs.
+- Dropped the unused `YamlDotNet` and `Microsoft.Extensions.Options` package references, and replaced the generic host in `Program.cs` — built but never started, and its configuration unused because settings load from a separate `ConfigurationBuilder` — with a plain `ServiceCollection`.
+- Deduplicated `GenerationSettings.Normalize` into one list-cleaning helper and folded thirteen hand-written validation throws into a single `Require` helper.
+- Hoisted the Foundry `ResponsesClient` construction out of the model-retry loop, and inlined the `BuildWebSearchTool` wrapper that discarded its only argument.
+
 ## 2026-08-28
 - Resolved the daily workflow's AI provider in one place instead of repeating it across steps. A `Resolve provider` step now picks the `workflow_dispatch` menu choice when there is one and the `DEFAULT_AI_PROVIDER` workflow env value otherwise, and later steps consume its output. Switching the scheduled provider is now a one-line edit.
 - Fixed the manual and scheduled runs disagreeing on a default: the dispatch menu previously defaulted to `anthropic` while the schedule fell back to `foundry`. The menu now offers `scheduled-default`, which defers to the same configured value the schedule uses.

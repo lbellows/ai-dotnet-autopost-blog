@@ -1,4 +1,3 @@
-using System.Text;
 using BlogGenerator.Core.Configuration;
 
 namespace BlogGenerator.Core.Prompts;
@@ -22,6 +21,12 @@ public static class PromptBuilder
 
     private const string HumorGuidance =
         "Keep the tone professional yet witty—sprinkle in light, tasteful humor or asides that help the reader stay engaged.";
+
+    private const string WriterRole =
+        "You are a senior technical writer for software engineers working with .NET, Azure, and AI Software.";
+
+    private const string ModeHeader =
+        "You MUST always output a complete, publishable blog post, in exactly ONE of two modes:";
 
     // Curated subset of reliable imgflip top-100 templates, each with its box count
     // and per-box descriptions. The descriptions drive how many pipe-separated texts
@@ -88,15 +93,30 @@ public static class PromptBuilder
         return string.Join("\n", guidanceLines);
     }
 
+    // Length, language, and output-format rules — identical for every provider and stage.
+    private static string LengthRule(GenerationSettings settings) =>
+        $"Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. " +
+        (settings.ImgflipMemeEnabled
+            ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim."
+            : "Markdown only (no HTML).");
+
+    // The post ships verbatim, so the model must never break character to talk to us.
+    private static string NeverBreakCharacterRule(bool fromDossier)
+    {
+        var mentions = fromDossier ? "these instructions, the dossier, or" : "these instructions or";
+        return "Never refuse, never ask the reader a question, never explain that sources were missing, and never " +
+               $"address the user or mention {mentions} which mode you chose. The output is published verbatim, so " +
+               "it must read as a finished, self-assured post either way.";
+    }
+
     public static PromptContext Build(GenerationSettings settings, DateOnly? today = null, Random? rng = null)
     {
         rng ??= Random.Shared;
         var currentDay = today ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var recentStart = currentDay.AddDays(-settings.RecentWindowDays);
-        var modeText = ModeInstructions(currentDay, settings.RecentWindowDays);
-        var userItems = UserInstructionItems(settings, currentDay, recentStart);
         var userInstructionText = string.Join("\n",
-            userItems.Select((item, idx) => $"{idx + 1}) {item}"));
+            UserInstructionItems(settings, currentDay, recentStart)
+                .Select((item, idx) => $"{idx + 1}) {item}"));
         var primaryLine = !string.IsNullOrEmpty(settings.TopicUrl)
             ? $"Primary requested link: {settings.TopicUrl}\n"
             : "";
@@ -104,23 +124,21 @@ public static class PromptBuilder
         var guidanceBlock = GuidanceBlock(settings, rng);
 
         var systemPrompt = $"""
-            You are a senior technical writer for software engineers working with .NET, Azure, and AI Software.
+            {WriterRole}
             Use the web_search tool to gather several fresh, reputable sources about current AI developments
             that impact developers. Then write a grounded Markdown blog post with:
 
             {guidanceBlock}
 
-            Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. {(settings.ImgflipMemeEnabled ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim." : "Markdown only (no HTML).")}
-            You MUST always output a complete, publishable blog post, in exactly ONE of two modes:
+            {LengthRule(settings)}
+            {ModeHeader}
             (A) NEWS MODE — only if you find a genuinely fresh lead story whose primary announcement falls inside the
             window. Lead with it and you may frame it as recent/this-week.
             (B) EVERGREEN MODE — if nothing inside the window qualifies. Write a timeless, pragmatic piece for the same
             audience on a still-relevant .NET/Azure/AI engineering topic. Do NOT reach for an older item (a release
             from weeks or months ago) and dress it up as fresh, and do NOT use time-sensitive framing like "this week",
             "the freshest development", or "just landed". Write it as evergreen guidance, not as news.
-            Never refuse, never ask the reader a question, never explain that sources were missing, and never address
-            the user or mention these instructions or which mode you chose. The output is published verbatim, so it
-            must read as a finished, self-assured post either way.
+            {NeverBreakCharacterRule(fromDossier: false)}
             If the web_search tool is unavailable, do not emit tool-call markup (e.g., <|start|> tokens); respond directly with the final article.
             """.ReplaceLineEndings("\n").Trim();
 
@@ -134,11 +152,8 @@ public static class PromptBuilder
         return new PromptContext(
             Today: currentDay,
             RecentStartDate: recentStart,
-            ModeInstructions: modeText,
             SystemPrompt: systemPrompt,
             UserPrompt: userPrompt,
-            UserInstructionItems: userItems,
-            PrimaryLinkLine: primaryLine,
             GuidanceBlock: guidanceBlock);
     }
 
@@ -260,14 +275,14 @@ public static class PromptBuilder
     public static string WriterSystemPrompt(PromptContext ctx, GenerationSettings settings)
     {
         return $"""
-            You are a senior technical writer for software engineers working with .NET, Azure, and AI Software.
+            {WriterRole}
             A research dossier gathered from live web search is supplied in the user message. Write a grounded
             Markdown blog post from it with:
 
             {ctx.GuidanceBlock}
 
-            Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. {(settings.ImgflipMemeEnabled ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim." : "Markdown only (no HTML).")}
-            You MUST always output a complete, publishable blog post, in exactly ONE of two modes:
+            {LengthRule(settings)}
+            {ModeHeader}
             (A) NEWS MODE — only if the dossier reports a genuinely fresh lead story whose primary announcement falls
             inside the window {ctx.RecentStartDate:yyyy-MM-dd} to {ctx.Today:yyyy-MM-dd}. Lead with it and you may
             frame it as recent/this-week.
@@ -275,9 +290,7 @@ public static class PromptBuilder
             Write a timeless, pragmatic piece for the same audience on a still-relevant .NET/Azure/AI engineering
             topic. Do NOT reach for an older item from the dossier and dress it up as fresh, and do NOT use
             time-sensitive framing like "this week", "the freshest development", or "just landed".
-            Never refuse, never ask the reader a question, never explain that sources were missing, and never address
-            the user or mention these instructions, the dossier, or which mode you chose. The output is published
-            verbatim, so it must read as a finished, self-assured post either way.
+            {NeverBreakCharacterRule(fromDossier: true)}
             You have no search tool in this step: every URL you print must appear verbatim in the dossier. Never
             invent a link, a date, or a version number, and never emit footnote markers or tool-call markup.
             """.ReplaceLineEndings("\n").Trim();
@@ -294,71 +307,5 @@ public static class PromptBuilder
             {researchDossier}
             ---
             """.ReplaceLineEndings("\n").Trim();
-    }
-
-    public static List<Dictionary<string, object>> BuildChatMessages(PromptContext ctx)
-    {
-        return
-        [
-            new()
-            {
-                ["role"] = "system",
-                ["content"] = new List<object>
-                {
-                    new Dictionary<string, string> { ["type"] = "text", ["text"] = ctx.SystemPrompt }
-                }
-            },
-            new()
-            {
-                ["role"] = "user",
-                ["content"] = new List<object>
-                {
-                    new Dictionary<string, string> { ["type"] = "text", ["text"] = ctx.UserPrompt }
-                }
-            }
-        ];
-    }
-
-    public static List<Dictionary<string, object>> EmptyResponseRetryInstruction()
-    {
-        return
-        [
-            new()
-            {
-                ["role"] = "user",
-                ["content"] = new List<object>
-                {
-                    new Dictionary<string, string>
-                    {
-                        ["type"] = "text",
-                        ["text"] = "The previous response was empty. Provide the complete Markdown article now with an H1 title, " +
-                                   "a short opening summary paragraph (no 'TL;DR' label), practical sections, and a **Further reading** list. Do not mention tool usage."
-                    }
-                }
-            }
-        ];
-    }
-
-    public static List<Dictionary<string, object>> MarkupRetryInstruction(bool toolMarkupPresent)
-    {
-        var intro = toolMarkupPresent
-            ? "The previous response included raw tool-call markup."
-            : "The previous response did not deliver the final Markdown article.";
-
-        var text = $"{intro} Web search is unavailable in this environment. Reply now with a complete Markdown post " +
-                   "that includes an H1 title, a short opening summary paragraph (no 'TL;DR' label), practical sections, and a **Further reading** list. " +
-                   "Do not emit tool-call markup, <|...|> tokens, or describe the attempt; output only the article.";
-
-        return
-        [
-            new()
-            {
-                ["role"] = "user",
-                ["content"] = new List<object>
-                {
-                    new Dictionary<string, string> { ["type"] = "text", ["text"] = text }
-                }
-            }
-        ];
     }
 }

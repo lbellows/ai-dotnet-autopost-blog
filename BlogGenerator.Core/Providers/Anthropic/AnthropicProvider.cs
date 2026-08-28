@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlogGenerator.Core.Configuration;
@@ -6,98 +5,73 @@ using BlogGenerator.Core.Prompts;
 
 namespace BlogGenerator.Core.Providers.Anthropic;
 
-public sealed class AnthropicProvider : IAIProvider
+public sealed class AnthropicProvider(HttpClient httpClient) : IAIProvider
 {
-    private readonly HttpClient _httpClient;
     private const string ApiUrl = "https://api.anthropic.com/v1/messages";
 
     public string ProviderName => "anthropic";
-
-    public AnthropicProvider(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
 
     public async Task<AIProviderResponse> GeneratePostAsync(
         PromptContext promptContext,
         GenerationSettings settings,
         CancellationToken ct = default)
     {
-        var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")
-            ?? throw new InvalidOperationException("ANTHROPIC_API_KEY must be set for Anthropic client");
-
-        var chosenModel = settings.AnthropicModel;
-
-        var tools = BuildTools(settings);
+        var apiKey = ProviderSupport.RequireEnv(
+            "ANTHROPIC_API_KEY must be set for Anthropic client", "ANTHROPIC_API_KEY");
 
         var request = new Dictionary<string, object>
         {
-            ["model"] = chosenModel,
+            ["model"] = settings.AnthropicModel,
             ["max_tokens"] = settings.AnthropicMaxTokens,
             ["system"] = promptContext.SystemPrompt,
             ["messages"] = new[]
             {
                 new { role = "user", content = promptContext.UserPrompt }
             },
-            ["tools"] = tools,
+            ["tools"] = BuildTools(settings),
         };
 
         if (settings.AnthropicTemperature.HasValue)
             request["temperature"] = settings.AnthropicTemperature.Value;
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiUrl);
-        httpRequest.Headers.Add("x-api-key", apiKey);
-        httpRequest.Headers.Add("anthropic-version", "2023-06-01");
-        httpRequest.Content = JsonContent.Create(request, options: JsonOpts);
-
-        var response = await _httpClient.SendAsync(httpRequest, ct);
-        var responseBody = await response.Content.ReadAsStringAsync(ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException(
-                $"Anthropic request failed with {(int)response.StatusCode} ({response.ReasonPhrase}). Response body: {responseBody}",
-                null,
-                response.StatusCode);
-        }
-
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
-
-        var parts = new List<string>();
-        if (json.TryGetProperty("content", out var contentArray))
-        {
-            foreach (var block in contentArray.EnumerateArray())
+        var responseBody = await ProviderSupport.PostJsonAsync(
+            httpClient, ApiUrl, request, JsonOpts, "Anthropic",
+            httpRequest =>
             {
-                if (block.TryGetProperty("type", out var typeProp) &&
-                    typeProp.GetString() == "text" &&
-                    block.TryGetProperty("text", out var textProp))
-                {
-                    var text = textProp.GetString();
-                    if (!string.IsNullOrWhiteSpace(text))
-                        parts.Add(text.Trim());
-                }
-            }
-        }
+                httpRequest.Headers.Add("x-api-key", apiKey);
+                httpRequest.Headers.Add("anthropic-version", "2023-06-01");
+            },
+            ct);
 
-        var markdown = string.Join("\n", parts);
+        var markdown = ExtractText(responseBody);
         if (string.IsNullOrWhiteSpace(markdown))
             throw new InvalidOperationException("Anthropic response did not contain text content");
 
-        return new AIProviderResponse(markdown, chosenModel);
+        return new AIProviderResponse(markdown, settings.AnthropicModel);
     }
 
+    // The response is a list of content blocks; the search results and tool calls are interleaved
+    // with the prose, so only the text blocks make up the article.
+    private static string ExtractText(string responseBody)
+    {
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
+        if (!json.TryGetProperty("content", out var contentArray))
+            return string.Empty;
+
+        var parts = contentArray.EnumerateArray()
+            .Where(block =>
+                block.TryGetProperty("type", out var type) && type.GetString() == "text" &&
+                block.TryGetProperty("text", out _))
+            .Select(block => block.GetProperty("text").GetString())
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => text!.Trim());
+
+        return string.Join("\n", parts);
+    }
+
+    // Domains arrive already trimmed, lower-cased, and de-duplicated from GenerationSettings.Normalize().
     private static List<object> BuildTools(GenerationSettings settings)
     {
-        var allowedDomains = settings.AllowedDomains
-            .Where(domain => !string.IsNullOrWhiteSpace(domain))
-            .Select(domain => domain.Trim().ToLowerInvariant())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        var blockedDomains = settings.BlockedDomains
-            .Where(domain => !string.IsNullOrWhiteSpace(domain))
-            .Select(domain => domain.Trim().ToLowerInvariant())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
         var toolDef = new Dictionary<string, object>
         {
             ["type"] = "web_search_20250305",
@@ -105,10 +79,10 @@ public sealed class AnthropicProvider : IAIProvider
             ["max_uses"] = settings.MaxSearches,
         };
 
-        if (allowedDomains.Count > 0)
-            toolDef["allowed_domains"] = allowedDomains;
-        if (blockedDomains.Count > 0)
-            toolDef["blocked_domains"] = blockedDomains;
+        if (settings.AllowedDomains.Count > 0)
+            toolDef["allowed_domains"] = settings.AllowedDomains;
+        if (settings.BlockedDomains.Count > 0)
+            toolDef["blocked_domains"] = settings.BlockedDomains;
 
         return [toolDef];
     }

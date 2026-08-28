@@ -8,7 +8,7 @@ public class ImgflipClientTests
         params (string Name, string Id)[] entries) =>
         entries.ToDictionary(
             e => e.Name.ToLowerInvariant(),
-            e => new ImgflipTemplate { Id = e.Id, Name = e.Name, Url = $"https://i.imgflip.com/{e.Id}.jpg" });
+            e => new ImgflipTemplate { Id = e.Id, Name = e.Name });
 
     [Fact]
     public void FindTemplate_ExactMatch()

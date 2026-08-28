@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -19,9 +18,8 @@ namespace BlogGenerator.Core.Providers.Venice;
 /// from the merged dossier with search off. Clearing <c>VeniceWriterModel</c> collapses this
 /// back to a single search-and-write call.
 /// </summary>
-public sealed partial class VeniceProvider : IAIProvider
+public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
 {
-    private readonly HttpClient _httpClient;
     private const string ApiUrl = "https://api.venice.ai/api/v1/chat/completions";
 
     // Cap on how much raw citation text is handed to the writer. The brain's notes already
@@ -31,67 +29,69 @@ public sealed partial class VeniceProvider : IAIProvider
 
     public string ProviderName => "venice";
 
-    public VeniceProvider(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
     public async Task<AIProviderResponse> GeneratePostAsync(
         PromptContext promptContext,
         GenerationSettings settings,
         CancellationToken ct = default)
     {
         var apiKey = ResolveApiKey();
-        var brainCandidates = BuildModelCandidates(settings.VeniceBrainModel, settings.VeniceBrainFallbackModels);
-        var writerCandidates = BuildModelCandidates(settings.VeniceWriterModel, settings.VeniceWriterFallbackModels);
+        var brainCandidates = ProviderSupport.ModelCandidates(
+            settings.VeniceBrainModel, settings.VeniceBrainFallbackModels);
+        var writerCandidates = ProviderSupport.ModelCandidates(
+            settings.VeniceWriterModel, settings.VeniceWriterFallbackModels);
 
         if (brainCandidates.Count == 0)
             throw new InvalidOperationException("Generation:VeniceBrainModel must name at least one Venice model.");
 
+        // No writer configured: one grounded call both searches and writes.
         if (writerCandidates.Count == 0)
         {
             Console.WriteLine("Venice: no writer model configured; running a single search-and-write call.");
-            var single = await CompleteAsync(
+            return await WriteAsync(
                 brainCandidates,
-                PromptBuilder.BuildChatMessages(promptContext),
-                settings.VeniceMaxTokens,
-                settings.VeniceTemperature,
-                settings.VeniceTopP,
+                promptContext.SystemPrompt,
+                promptContext.UserPrompt,
                 webSearch: true,
-                apiKey,
-                ct);
-
-            var singleMarkdown = CleanModelText(single.Content);
-            if (string.IsNullOrWhiteSpace(singleMarkdown))
-                throw new InvalidOperationException("Venice response did not contain text content.");
-
-            return new AIProviderResponse(singleMarkdown, single.Model);
+                settings, apiKey, ct);
         }
 
         var dossier = await ResearchAsync(promptContext, settings, brainCandidates, apiKey, ct);
 
-        var writerMessages = new List<Dictionary<string, object>>
-        {
-            ChatMessage("system", PromptBuilder.WriterSystemPrompt(promptContext, settings)),
-            ChatMessage("user", PromptBuilder.WriterUserPrompt(promptContext, dossier)),
-        };
-
-        var written = await CompleteAsync(
+        var written = await WriteAsync(
             writerCandidates,
-            writerMessages,
+            PromptBuilder.WriterSystemPrompt(promptContext, settings),
+            PromptBuilder.WriterUserPrompt(promptContext, dossier),
+            webSearch: false,
+            settings, apiKey, ct);
+
+        Console.WriteLine($"Venice: wrote post with {written.UsedModel}.");
+        return written;
+    }
+
+    private async Task<AIProviderResponse> WriteAsync(
+        IReadOnlyList<string> candidates,
+        string systemPrompt,
+        string userPrompt,
+        bool webSearch,
+        GenerationSettings settings,
+        string apiKey,
+        CancellationToken ct)
+    {
+        var completion = await CompleteAsync(
+            candidates,
+            [ChatMessage("system", systemPrompt), ChatMessage("user", userPrompt)],
             settings.VeniceMaxTokens,
             settings.VeniceTemperature,
             settings.VeniceTopP,
-            webSearch: false,
+            webSearch,
             apiKey,
             ct);
 
-        var markdown = CleanModelText(written.Content);
+        var markdown = CleanModelText(completion.Content);
         if (string.IsNullOrWhiteSpace(markdown))
-            throw new InvalidOperationException($"Venice writer model {written.Model} returned no article text.");
+            throw new InvalidOperationException($"Venice model {completion.Model} returned no article text.");
 
-        Console.WriteLine($"Venice: wrote post with {written.Model}.");
-        return new AIProviderResponse(markdown, written.Model);
+        return new AIProviderResponse(markdown, completion.Model);
     }
 
     private async Task<string> ResearchAsync(
@@ -119,15 +119,9 @@ public sealed partial class VeniceProvider : IAIProvider
             Console.WriteLine($"Venice research pass {i + 1}/{angles.Count}...");
             try
             {
-                var messages = new List<Dictionary<string, object>>
-                {
-                    ChatMessage("system", researchSystem),
-                    ChatMessage("user", angles[i]),
-                };
-
                 var result = await CompleteAsync(
                     brainCandidates,
-                    messages,
+                    [ChatMessage("system", researchSystem), ChatMessage("user", angles[i])],
                     settings.VeniceResearchMaxTokens,
                     settings.VeniceResearchTemperature,
                     settings.VeniceTopP,
@@ -149,14 +143,14 @@ public sealed partial class VeniceProvider : IAIProvider
             {
                 // One barren angle should not sink the run; the remaining passes still ground the post.
                 lastErr = ex;
-                Console.WriteLine($"Venice research pass {i + 1} failed: {Sanitize(ex.Message, apiKey)}");
+                Console.WriteLine($"Venice research pass {i + 1} failed: {Redact(ex.Message, apiKey)}");
             }
         }
 
         if (notes.Count == 0)
         {
             throw new InvalidOperationException(
-                $"All {angles.Count} Venice research passes failed. Last error: {Sanitize(lastErr?.Message ?? "unknown", apiKey)}");
+                $"All {angles.Count} Venice research passes failed. Last error: {Redact(lastErr?.Message ?? "unknown", apiKey)}");
         }
 
         Console.WriteLine($"Venice research: {notes.Count}/{angles.Count} passes succeeded, {citations.Count} unique sources.");
@@ -229,19 +223,10 @@ public sealed partial class VeniceProvider : IAIProvider
                 if (topP.HasValue)
                     request["top_p"] = topP.Value;
 
-                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiUrl);
-                httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
-                httpRequest.Content = JsonContent.Create(request, options: JsonOpts);
-
-                var response = await _httpClient.SendAsync(httpRequest, ct);
-                var responseBody = await response.Content.ReadAsStringAsync(ct);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException(
-                        $"Venice request failed with {(int)response.StatusCode} ({response.ReasonPhrase}). Response body: {responseBody}",
-                        null,
-                        response.StatusCode);
-                }
+                var responseBody = await ProviderSupport.PostJsonAsync(
+                    httpClient, ApiUrl, request, JsonOpts, "Venice",
+                    httpRequest => httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}"),
+                    ct);
 
                 var completion = ParseCompletion(responseBody, model);
                 if (string.IsNullOrWhiteSpace(completion.Content))
@@ -252,13 +237,13 @@ public sealed partial class VeniceProvider : IAIProvider
             catch (Exception ex)
             {
                 lastErr = ex;
-                Console.WriteLine($"Venice call failed for {model}: {Sanitize(ex.Message, apiKey)}");
+                Console.WriteLine($"Venice call failed for {model}: {Redact(ex.Message, apiKey)}");
             }
         }
 
         throw new InvalidOperationException(
             $"No Venice model succeeded after trying: [{string.Join(", ", modelCandidates)}]. " +
-            $"Last error: {Sanitize(lastErr?.Message ?? "unknown", apiKey)}");
+            $"Last error: {Redact(lastErr?.Message ?? "unknown", apiKey)}");
     }
 
     internal static VeniceCompletion ParseCompletion(string responseBody, string requestedModel)
@@ -292,25 +277,11 @@ public sealed partial class VeniceProvider : IAIProvider
             }
         }
 
-        var usedModel = json.TryGetProperty("model", out var modelProp) && modelProp.ValueKind == JsonValueKind.String
-            ? modelProp.GetString() ?? requestedModel
-            : requestedModel;
-
-        return new VeniceCompletion(content, usedModel, citations);
-    }
-
-    internal static IReadOnlyList<string> BuildModelCandidates(string primary, IEnumerable<string> fallbacks)
-    {
-        var candidates = new List<string>();
-        if (!string.IsNullOrWhiteSpace(primary))
-            candidates.Add(primary.Trim());
-        candidates.AddRange(fallbacks);
-
-        return candidates
-            .Where(model => !string.IsNullOrWhiteSpace(model))
-            .Select(model => model.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var responseModel = ReadString(json, "model");
+        return new VeniceCompletion(
+            content,
+            string.IsNullOrEmpty(responseModel) ? requestedModel : responseModel,
+            citations);
     }
 
     /// <summary>
@@ -328,18 +299,12 @@ public sealed partial class VeniceProvider : IAIProvider
         return text.Trim();
     }
 
-    private static string ResolveApiKey()
-    {
-        // VENICE_API_KEY is canonical; veniceApi matches the key name used in local .env files.
-        foreach (var name in new[] { "VENICE_API_KEY", "veniceApi" })
-        {
-            var value = Environment.GetEnvironmentVariable(name);
-            if (!string.IsNullOrWhiteSpace(value))
-                return value.Trim();
-        }
+    // VENICE_API_KEY is canonical; veniceApi matches the key name used in local .env files.
+    private static string ResolveApiKey() => ProviderSupport.RequireEnv(
+        "VENICE_API_KEY must be set to a non-empty Venice API key.", "VENICE_API_KEY", "veniceApi");
 
-        throw new InvalidOperationException("VENICE_API_KEY must be set to a non-empty Venice API key.");
-    }
+    private static string Redact(string message, string apiKey) =>
+        ProviderSupport.Redact(message, (apiKey, "VENICE_API_KEY"));
 
     private static Dictionary<string, object> ChatMessage(string role, string content) =>
         new() { ["role"] = role, ["content"] = content };
@@ -354,9 +319,6 @@ public sealed partial class VeniceProvider : IAIProvider
 
     private static string Truncate(string value, int length) =>
         value.Length <= length ? value : value[..length].TrimEnd() + "…";
-
-    private static string Sanitize(string message, string apiKey) =>
-        message.Replace(apiKey, "[VENICE_API_KEY]", StringComparison.Ordinal);
 
     // Also eats any horizontal space in front of the marker so removing a mid-sentence
     // citation does not leave a double space behind.

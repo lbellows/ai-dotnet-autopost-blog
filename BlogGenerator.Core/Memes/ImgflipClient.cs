@@ -115,8 +115,6 @@ public sealed class ImgflipTemplate
 {
     [JsonPropertyName("id")]        public string Id       { get; init; } = string.Empty;
     [JsonPropertyName("name")]      public string Name     { get; init; } = string.Empty;
-    [JsonPropertyName("url")]       public string Url      { get; init; } = string.Empty;
-    [JsonPropertyName("box_count")] public int    BoxCount { get; init; } = 2;
 }
 
 file sealed class ImgflipGetMemesResponse
@@ -141,5 +139,4 @@ file sealed class ImgflipCaptionResponse
 file sealed class ImgflipCaptionData
 {
     [JsonPropertyName("url")]      public string Url     { get; init; } = string.Empty;
-    [JsonPropertyName("page_url")] public string PageUrl { get; init; } = string.Empty;
 }

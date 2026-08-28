@@ -27,23 +27,6 @@ public class VeniceProviderTests
         VeniceMaxTokens = 8192,
     };
 
-    [Fact]
-    public void BuildModelCandidatesPutsPrimaryFirstAndDedupes()
-    {
-        var candidates = VeniceProvider.BuildModelCandidates(
-            " grok-4-6 ", ["claude-sonnet-5", "GROK-4-6", "  ", "zai-org-glm-5-2"]);
-
-        Assert.Equal(["grok-4-6", "claude-sonnet-5", "zai-org-glm-5-2"], candidates);
-    }
-
-    [Fact]
-    public void BuildModelCandidatesFallsBackWhenPrimaryEmpty()
-    {
-        var candidates = VeniceProvider.BuildModelCandidates("", ["claude-sonnet-5"]);
-
-        Assert.Equal(["claude-sonnet-5"], candidates);
-    }
-
     [Theory]
     [InlineData("Shipped on Tuesday.^4^", "Shipped on Tuesday.")]
     [InlineData("Confirmed by three sources.^1,5,8^", "Confirmed by three sources.")]

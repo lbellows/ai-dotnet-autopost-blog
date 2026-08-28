@@ -1,5 +1,4 @@
 using BlogGenerator.Core.Configuration;
-using BlogGenerator.Core.Providers.AzureFoundry;
 
 namespace BlogGenerator.Tests;
 
@@ -51,16 +50,5 @@ public class GenerationSettingsTests
         var settings = new GenerationSettings();
         var ex = Assert.Throws<InvalidOperationException>(settings.Validate);
         Assert.Contains("TopicHint", ex.Message);
-    }
-
-    [Fact]
-    public void BuildModelCandidatesPrefersFoundryDefaultModel()
-    {
-        var settings = CreateSettings();
-
-        var candidates = AzureFoundryProvider.BuildModelCandidates(settings);
-
-        Assert.Equal("gpt-5.4-mini", candidates[0]);
-        Assert.Equal(["gpt-5.4-mini", "gpt-5-mini"], candidates);
     }
 }

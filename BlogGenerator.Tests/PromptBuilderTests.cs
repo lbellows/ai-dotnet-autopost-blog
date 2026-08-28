@@ -27,7 +27,7 @@ public class PromptBuilderTests
         var settings = CreateSettings();
         var sunday = new DateOnly(2025, 6, 1); // Sunday
         var ctx = PromptBuilder.Build(settings, today: sunday);
-        Assert.Contains("synopsis day", ctx.ModeInstructions);
+        Assert.Contains("synopsis day", ctx.UserPrompt);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class PromptBuilderTests
         var settings = CreateSettings();
         var monday = new DateOnly(2025, 6, 2); // Monday
         var ctx = PromptBuilder.Build(settings, today: monday);
-        Assert.Contains("laser-focused", ctx.ModeInstructions);
+        Assert.Contains("laser-focused", ctx.UserPrompt);
     }
 
     [Fact]
@@ -64,8 +64,8 @@ public class PromptBuilderTests
         var settings = CreateSettings();
         settings.TopicUrl = "https://example.com/article";
         var ctx = PromptBuilder.Build(settings, today: new DateOnly(2025, 6, 2));
-        Assert.Contains("https://example.com/article", ctx.PrimaryLinkLine);
-        Assert.True(ctx.UserInstructionItems.Count >= 5); // extra instruction added
+        Assert.Contains("Primary requested link: https://example.com/article", ctx.UserPrompt);
+        Assert.Contains("5)", ctx.UserPrompt); // extra instruction added
     }
 
     [Fact]

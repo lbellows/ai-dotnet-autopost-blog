@@ -8,9 +8,6 @@ namespace BlogGenerator.Core.PostGeneration;
 
 public static partial class PostWriter
 {
-    [GeneratedRegex(@"^\s*#")]
-    private static partial Regex HeadingRegex();
-
     // Matches a list-item line that is just a bullet marker with no content (e.g. "-", "* ", "+").
     [GeneratedRegex(@"^(\s*)([-*+])\s*$")]
     private static partial Regex EmptyBulletRegex();

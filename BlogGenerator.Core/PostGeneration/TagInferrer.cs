@@ -50,7 +50,6 @@ public static partial class TagInferrer
 
     public static List<string> Infer(string markdownBody, string? model)
     {
-        var candidates = new Dictionary<string, int>(StringComparer.Ordinal);
         var sections = new List<string>();
 
         foreach (var line in markdownBody.Split('\n'))
@@ -62,25 +61,12 @@ public static partial class TagInferrer
                 sections.Add(stripped.Split("**TL;DR**", 2)[^1].Trim(' ', ':'));
         }
 
-        var textBlob = sections.Count > 0 ? string.Join(" ", sections) : markdownBody;
-
-        foreach (Match m in TokenRegex().Matches(textBlob))
-        {
-            var normalized = NormalizeTag(m.Value);
-            if (!string.IsNullOrEmpty(normalized))
-                candidates[normalized] = candidates.GetValueOrDefault(normalized) + 1;
-        }
+        var candidates = CountTags(sections.Count > 0 ? string.Join(" ", sections) : markdownBody);
 
         // Headings are short, so most candidates tie at a single occurrence and the tiebreak
         // decides the tag list. Alphabetical order made that "actually" and "already"; whole-body
         // frequency makes it whatever the post is actually about.
-        var bodyFrequency = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (Match m in TokenRegex().Matches(markdownBody))
-        {
-            var normalized = NormalizeTag(m.Value);
-            if (!string.IsNullOrEmpty(normalized))
-                bodyFrequency[normalized] = bodyFrequency.GetValueOrDefault(normalized) + 1;
-        }
+        var bodyFrequency = CountTags(markdownBody);
 
         // Candidates come from headings, which are Title Case, so capitalization there cannot
         // tell "Azure" from "Actually". Body prose can: real tags are proper nouns or versioned
@@ -126,6 +112,20 @@ public static partial class TagInferrer
         }
 
         return tags;
+    }
+
+    // How often each tag-worthy token occurs in the given text.
+    private static Dictionary<string, int> CountTags(string text)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (Match m in TokenRegex().Matches(text))
+        {
+            var normalized = NormalizeTag(m.Value);
+            if (!string.IsNullOrEmpty(normalized))
+                counts[normalized] = counts.GetValueOrDefault(normalized) + 1;
+        }
+
+        return counts;
     }
 
     /// <summary>
