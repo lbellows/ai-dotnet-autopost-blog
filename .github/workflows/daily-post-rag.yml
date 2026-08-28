@@ -24,9 +24,7 @@ permissions:
 
 env:
   # Single source of truth for which provider the scheduled run uses. Change this one line to
-  # switch it. To toggle without a commit, set an AI_PROVIDER repository variable instead
-  # (Settings -> Secrets and variables -> Actions -> Variables); it wins over this default.
-  # A manual run can still override both by picking a provider from the menu above.
+  # switch it; a manual run can still override it from the menu above.
   DEFAULT_AI_PROVIDER: venice
 
 jobs:
@@ -41,13 +39,11 @@ jobs:
         id: provider
         env:
           REQUESTED: ${{ inputs.ai_provider }}
-          REPO_DEFAULT: ${{ vars.AI_PROVIDER }}
         run: |
-          # Precedence: explicit menu choice > AI_PROVIDER repo variable > DEFAULT_AI_PROVIDER.
-          # Scheduled runs supply no input, so they land on the configured default.
+          # Scheduled runs supply no input, so they land on DEFAULT_AI_PROVIDER.
           PROVIDER="$REQUESTED"
           if [ -z "$PROVIDER" ] || [ "$PROVIDER" = "scheduled-default" ]; then
-            PROVIDER="${REPO_DEFAULT:-$DEFAULT_AI_PROVIDER}"
+            PROVIDER="$DEFAULT_AI_PROVIDER"
           fi
           echo "Using provider: $PROVIDER"
           echo "name=$PROVIDER" >> "$GITHUB_OUTPUT"

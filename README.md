@@ -162,13 +162,12 @@ Manual test: Use the workflow's Run workflow button to test once you add the sec
 
 ### Switching the scheduled provider
 
-The provider is resolved once, in the workflow's `Resolve provider` step, with this precedence:
+The provider is resolved once, in the workflow's `Resolve provider` step:
 
-1. An explicit choice from the `Run workflow` menu (that run only).
-2. An `AI_PROVIDER` repository variable — Settings → Secrets and variables → Actions → Variables. **Toggles the scheduled run with no commit.**
-3. The `DEFAULT_AI_PROVIDER` value in `.github/workflows/daily-post-rag.yml` (currently `venice`).
+1. An explicit choice from the `Run workflow` menu overrides everything, for that run only.
+2. Otherwise the run uses `DEFAULT_AI_PROVIDER` in `.github/workflows/daily-post-rag.yml` (currently `venice`).
 
-So there is one line to edit in the repo, or one variable to flip in the UI — the provider name no longer appears in multiple steps.
+Switching the scheduled provider is that one line — the provider name no longer appears in individual steps.
 
 # Content cadence & tone
 

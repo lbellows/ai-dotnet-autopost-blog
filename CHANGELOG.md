@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2026-08-28
-- Resolved the daily workflow's AI provider in one place instead of repeating it across steps. A `Resolve provider` step now applies a single precedence — manual menu choice, then an `AI_PROVIDER` repository variable, then the `DEFAULT_AI_PROVIDER` workflow env value — and later steps consume its output. Switching the scheduled provider is now one line to edit, or one repo variable to flip with no commit at all.
+- Resolved the daily workflow's AI provider in one place instead of repeating it across steps. A `Resolve provider` step now picks the `workflow_dispatch` menu choice when there is one and the `DEFAULT_AI_PROVIDER` workflow env value otherwise, and later steps consume its output. Switching the scheduled provider is now a one-line edit.
 - Fixed the manual and scheduled runs disagreeing on a default: the dispatch menu previously defaulted to `anthropic` while the schedule fell back to `foundry`. The menu now offers `scheduled-default`, which defers to the same configured value the schedule uses.
 - Pointed the scheduled run at `venice`.
 - Added a Venice.ai provider (`dotnet run --project BlogGenerator -- venice`) targeting Venice's OpenAI-compatible chat-completions endpoint with grounding via provider-side web search (`venice_parameters.enable_web_search`).
