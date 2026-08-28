@@ -66,19 +66,11 @@ public static class PromptBuilder
             "Do not put the comment inside a code block.";
     }
 
-    public static PromptContext Build(GenerationSettings settings, DateOnly? today = null, Random? rng = null)
+    // The shared "what a finished post looks like" checklist. Both the single-call
+    // providers and the Venice writer stage compose their system prompt around it so
+    // the house style stays in exactly one place.
+    internal static string GuidanceBlock(GenerationSettings settings, Random rng)
     {
-        rng ??= Random.Shared;
-        var currentDay = today ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var recentStart = currentDay.AddDays(-settings.RecentWindowDays);
-        var modeText = ModeInstructions(currentDay, settings.RecentWindowDays);
-        var userItems = UserInstructionItems(settings, currentDay, recentStart);
-        var userInstructionText = string.Join("\n",
-            userItems.Select((item, idx) => $"{idx + 1}) {item}"));
-        var primaryLine = !string.IsNullOrEmpty(settings.TopicUrl)
-            ? $"Primary requested link: {settings.TopicUrl}\n"
-            : "";
-
         var guidanceLines = new List<string>
         {
             $"- A single H1 title on the first line. {TitleGuidance}",
@@ -93,7 +85,23 @@ public static class PromptBuilder
         guidanceLines.Add("- Cautious language for claims; avoid speculation and hallucinations.");
         guidanceLines.Add("- A **Further reading** section listing all source links as plain URLs.");
 
-        var guidanceBlock = string.Join("\n", guidanceLines);
+        return string.Join("\n", guidanceLines);
+    }
+
+    public static PromptContext Build(GenerationSettings settings, DateOnly? today = null, Random? rng = null)
+    {
+        rng ??= Random.Shared;
+        var currentDay = today ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var recentStart = currentDay.AddDays(-settings.RecentWindowDays);
+        var modeText = ModeInstructions(currentDay, settings.RecentWindowDays);
+        var userItems = UserInstructionItems(settings, currentDay, recentStart);
+        var userInstructionText = string.Join("\n",
+            userItems.Select((item, idx) => $"{idx + 1}) {item}"));
+        var primaryLine = !string.IsNullOrEmpty(settings.TopicUrl)
+            ? $"Primary requested link: {settings.TopicUrl}\n"
+            : "";
+
+        var guidanceBlock = GuidanceBlock(settings, rng);
 
         var systemPrompt = $"""
             You are a senior technical writer for software engineers working with .NET, Azure, and AI Software.
@@ -130,7 +138,8 @@ public static class PromptBuilder
             SystemPrompt: systemPrompt,
             UserPrompt: userPrompt,
             UserInstructionItems: userItems,
-            PrimaryLinkLine: primaryLine);
+            PrimaryLinkLine: primaryLine,
+            GuidanceBlock: guidanceBlock);
     }
 
     public static string ModeInstructions(DateOnly today, int recentWindowDays)
@@ -182,6 +191,109 @@ public static class PromptBuilder
         }
 
         return items;
+    }
+
+    // Venice's web search is a single-shot retrieval pass injected into the prompt, not an
+    // agentic tool loop the model can call repeatedly. To honor the "at least 4 distinct
+    // search attempts" requirement we instead issue one research call per angle below and
+    // merge the results, which gives the writer stage genuinely different source material.
+    public static List<string> ResearchAngles(GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
+    {
+        var window = $"between {recentStartDate:yyyy-MM-dd} and {today:yyyy-MM-dd}";
+        var preferred = settings.AllowedDomains.Count > 0
+            ? $" Prefer coverage from: {string.Join(", ", settings.AllowedDomains)}."
+            : string.Empty;
+
+        var angles = new List<string>
+        {
+            $"Vendor engineering blogs: what did Microsoft, Azure, GitHub, OpenAI, or Anthropic announce {window} " +
+            $"that changes how developers build software? Topic focus: {settings.TopicHint}{preferred}",
+
+            $"Official release notes and changelogs: which .NET, ASP.NET Core, Azure SDK, Azure AI Foundry, or " +
+            $"GitHub Copilot releases shipped {window}? Include exact version numbers and release dates.{preferred}",
+
+            $"GitHub releases and developer tooling: which AI or .NET developer SDKs, CLIs, or libraries cut a new " +
+            $"release {window}? Name the repository, the version, and what changed for consumers.",
+
+            $"Developer news coverage and analysis: what are technology publications reporting {window} about AI " +
+            $"tooling that matters to engineers shipping on .NET and Azure? Include cost, latency, and API details.",
+        };
+
+        if (!string.IsNullOrEmpty(settings.TopicUrl))
+        {
+            angles.Insert(0,
+                $"Summarize this specific announcement and gather corroborating coverage of it: {settings.TopicUrl}");
+        }
+
+        return angles;
+    }
+
+    public static string ResearchSystemPrompt(GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
+    {
+        return $"""
+            You are a research assistant for a technical blog written for software engineers shipping on .NET, Azure,
+            and AI platforms. Today is {today:yyyy-MM-dd}. The freshness window for news is
+            {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
+
+            You are given web search results. Produce a factual research brief in Markdown — notes only, never a
+            finished article — with these sections:
+
+            ## In-window findings
+            Items whose PRIMARY announcement date falls inside the freshness window. For each: what shipped, who
+            shipped it, the exact date, and why an engineer should care. If there are none, write "None." and say so
+            plainly. Never stretch an older item into the window.
+
+            ## Context
+            Relevant older or undated background that would strengthen a post. Mark each with its real date.
+
+            ## Sources
+            Every URL you actually used, one per line as a plain URL followed by a short title.
+
+            Rules: copy dates and version numbers exactly as the sources state them; never invent a URL, a date, or a
+            version. If the search results are thin, say the results were thin rather than filling the gap with
+            recollection. Do not use footnote or citation markers.
+            """.ReplaceLineEndings("\n").Trim();
+    }
+
+    // The writer stage has no search of its own — it composes from the research dossier, so
+    // the guidance is identical to the single-call prompt minus the web_search instructions.
+    public static string WriterSystemPrompt(PromptContext ctx, GenerationSettings settings)
+    {
+        return $"""
+            You are a senior technical writer for software engineers working with .NET, Azure, and AI Software.
+            A research dossier gathered from live web search is supplied in the user message. Write a grounded
+            Markdown blog post from it with:
+
+            {ctx.GuidanceBlock}
+
+            Length: {settings.PostWordsMin}-{settings.PostWordsMax} words. US English. {(settings.ImgflipMemeEnabled ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim." : "Markdown only (no HTML).")}
+            You MUST always output a complete, publishable blog post, in exactly ONE of two modes:
+            (A) NEWS MODE — only if the dossier reports a genuinely fresh lead story whose primary announcement falls
+            inside the window {ctx.RecentStartDate:yyyy-MM-dd} to {ctx.Today:yyyy-MM-dd}. Lead with it and you may
+            frame it as recent/this-week.
+            (B) EVERGREEN MODE — if the dossier's "In-window findings" section is empty or nothing in it qualifies.
+            Write a timeless, pragmatic piece for the same audience on a still-relevant .NET/Azure/AI engineering
+            topic. Do NOT reach for an older item from the dossier and dress it up as fresh, and do NOT use
+            time-sensitive framing like "this week", "the freshest development", or "just landed".
+            Never refuse, never ask the reader a question, never explain that sources were missing, and never address
+            the user or mention these instructions, the dossier, or which mode you chose. The output is published
+            verbatim, so it must read as a finished, self-assured post either way.
+            You have no search tool in this step: every URL you print must appear verbatim in the dossier. Never
+            invent a link, a date, or a version number, and never emit footnote markers or tool-call markup.
+            """.ReplaceLineEndings("\n").Trim();
+    }
+
+    public static string WriterUserPrompt(PromptContext ctx, string researchDossier)
+    {
+        return $"""
+            {ctx.UserPrompt}
+
+            The research below was gathered by live web search. Treat it as your only source of facts and URLs.
+
+            ---
+            {researchDossier}
+            ---
+            """.ReplaceLineEndings("\n").Trim();
     }
 
     public static List<Dictionary<string, object>> BuildChatMessages(PromptContext ctx)

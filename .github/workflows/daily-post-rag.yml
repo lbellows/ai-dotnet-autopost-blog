@@ -16,6 +16,7 @@ on:
         options:
           - anthropic
           - foundry
+          - venice
 
 permissions:
   contents: write
@@ -34,6 +35,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FOUNDRY_OPENAI_ENDPOINT: ${{ secrets.FOUNDRY_OPENAI_ENDPOINT }}
           FOUNDRY_PROJECT_API_KEY: ${{ secrets.FOUNDRY_PROJECT_API_KEY }}
+          VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
         run: |
           case "$PROVIDER" in
             anthropic|claude)
@@ -42,6 +44,9 @@ jobs:
             foundry|azure)
               [ -n "$FOUNDRY_OPENAI_ENDPOINT" ] || { echo "::error::Missing FOUNDRY_OPENAI_ENDPOINT secret."; exit 1; }
               [ -n "$FOUNDRY_PROJECT_API_KEY" ] || { echo "::error::Missing FOUNDRY_PROJECT_API_KEY secret."; exit 1; }
+              ;;
+            venice)
+              [ -n "$VENICE_API_KEY" ] || { echo "::error::Missing VENICE_API_KEY secret."; exit 1; }
               ;;
             *)
               echo "::error::Unknown provider: $PROVIDER"; exit 1
@@ -53,6 +58,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FOUNDRY_OPENAI_ENDPOINT: ${{ secrets.FOUNDRY_OPENAI_ENDPOINT }}
           FOUNDRY_PROJECT_API_KEY: ${{ secrets.FOUNDRY_PROJECT_API_KEY }}
+          VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
           IMGFLIP_USERNAME: ${{ secrets.IMGFLIP_USERNAME }}
           IMGFLIP_PASSWORD: ${{ secrets.IMGFLIP_PASSWORD }}
         run: |

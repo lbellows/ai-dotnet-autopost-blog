@@ -5,6 +5,7 @@ using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Providers;
 using BlogGenerator.Core.Providers.Anthropic;
 using BlogGenerator.Core.Providers.AzureFoundry;
+using BlogGenerator.Core.Providers.Venice;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,6 +17,10 @@ var repoRoot = FindRepoRoot(AppContext.BaseDirectory)
     ?? FindRepoRoot(Directory.GetCurrentDirectory())
     ?? throw new InvalidOperationException("Could not find repo root (directory containing _posts/)");
 
+// Secrets come from the environment. Locally a gitignored .env at the repo root is the
+// convenient place to keep them; real environment variables always win over its contents.
+LoadDotEnv(Path.Combine(repoRoot, ".env"));
+
 // Load non-secret settings from the single application settings file.
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
@@ -25,6 +30,7 @@ var configuration = new ConfigurationBuilder()
 // Register HttpClient for providers
 builder.Services.AddHttpClient<AnthropicProvider>();
 builder.Services.AddSingleton<AzureFoundryProvider>();
+builder.Services.AddHttpClient<VeniceProvider>(client => client.Timeout = TimeSpan.FromMinutes(5));
 builder.Services.AddHttpClient<ImgflipClient>();
 
 var host = builder.Build();
@@ -42,7 +48,8 @@ IAIProvider provider = providerName.ToLowerInvariant() switch
 {
     "anthropic" or "claude" => host.Services.GetRequiredService<AnthropicProvider>(),
     "foundry" or "azure" => host.Services.GetRequiredService<AzureFoundryProvider>(),
-    _ => throw new ArgumentException($"Unknown AI provider: {providerName}. Use 'anthropic' or 'foundry'."),
+    "venice" => host.Services.GetRequiredService<VeniceProvider>(),
+    _ => throw new ArgumentException($"Unknown AI provider: {providerName}. Use 'anthropic', 'foundry', or 'venice'."),
 };
 
 Console.WriteLine($"Using provider: {provider.ProviderName}");
@@ -59,6 +66,31 @@ var (postPath, memeRelPath) = PostWriter.WritePost(response.Markdown, settings, 
 Console.WriteLine($"Post generated: {postPath}");
 if (memeRelPath != null)
     Console.WriteLine($"Meme generated: {memeRelPath}");
+
+// Minimal KEY=VALUE reader so `dotnet run` works locally without exporting anything first.
+// Deliberately does not overwrite variables that are already set, so CI secrets take priority.
+static void LoadDotEnv(string path)
+{
+    if (!File.Exists(path))
+        return;
+
+    foreach (var rawLine in File.ReadAllLines(path))
+    {
+        var line = rawLine.Trim();
+        if (line.Length == 0 || line.StartsWith('#'))
+            continue;
+
+        var separator = line.IndexOf('=');
+        if (separator <= 0)
+            continue;
+
+        var key = line[..separator].Trim();
+        var value = line[(separator + 1)..].Trim().Trim('"', '\'');
+
+        if (key.Length > 0 && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+            Environment.SetEnvironmentVariable(key, value);
+    }
+}
 
 static string? FindRepoRoot(string startDir)
 {
