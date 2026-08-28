@@ -1,4 +1,9 @@
+# Secrets — never commit these. .env.example is the documented, value-free template.
 .env
+.env.*
+!.env.example
+.claude/settings.local.json
+**/appsettings.*.local.json
 
 # .NET
 **/bin/

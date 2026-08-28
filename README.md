@@ -14,7 +14,7 @@ I needed an easy solution for this because I was holding my daughter, so not too
 
 * git workflows
 * executes C# (.NET 10) generator
-* calls claude API with search tool enabled (or Azure Foundry as alternate provider)
+* calls claude API with search tool enabled (or Azure Foundry / Venice.ai as alternate providers)
 * writes the blog post in MD & commits
 * triggers jekyll build which updates the blog
 
@@ -37,7 +37,7 @@ cd blog
 - Scheduled workflow: `.github/workflows/daily-post-rag.yml`
 - Configuration: `BlogGenerator/appsettings.json`
 
-Provider selection at runtime via CLI arg (`anthropic` or `foundry`) or `AI_PROVIDER` env var.
+Provider selection at runtime via CLI arg (`anthropic`, `foundry`, or `venice`) or `AI_PROVIDER` env var.
 
 ## Run the generator locally (for testing)
 
@@ -55,6 +55,17 @@ export FOUNDRY_OPENAI_ENDPOINT="https://...openai.azure.com/openai/v1/"
 export FOUNDRY_PROJECT_API_KEY="..."
 dotnet run --project BlogGenerator -- foundry
 ```
+
+For Venice.ai (OpenAI-compatible chat completions with provider-side web search):
+
+```sh
+export VENICE_API_KEY="..."
+dotnet run --project BlogGenerator -- venice
+```
+
+Instead of exporting anything, you can copy `.env.example` to `.env` and fill it in — the
+generator reads that file at startup. `.env` is gitignored; real environment variables always
+win over its contents, so CI secrets are unaffected.
 
 ## Run the tests
 
@@ -79,6 +90,10 @@ dotnet test BlogGenerator.sln
 - `AnthropicMaxTokens` / `AnthropicTemperature` — controls Claude response length and creativity.
 - `FoundryModels` — ordered list of Azure Foundry deployments the Responses path can try after the configured default deployment.
 - `FoundryDefaultModel`/`FoundryMaxTokens`/`FoundryTemperature`/`FoundryTopP` — generation parameters used by the Foundry path. `FoundryDefaultModel` is always tried first.
+- `VeniceBrainModel` / `VeniceBrainFallbackModels` — the research ("brain") model that runs the grounded web-search passes, plus ordered fallbacks tried when it errors.
+- `VeniceWriterModel` / `VeniceWriterFallbackModels` — the model that writes the post from the research dossier. Leave `VeniceWriterModel` empty to collapse Venice into a single search-and-write call.
+- `VeniceResearchMaxTokens` / `VeniceResearchTemperature` — budget and creativity for each research pass (kept low so the brain stays factual).
+- `VeniceMaxTokens` / `VeniceTemperature` / `VeniceTopP` — generation parameters for the writing pass.
 - `MemeGuidanceEnabled` — toggles whether prompts instruct the model to embed a meme image.
 - Generated posts automatically add a model tag (e.g., `claude-sonnet-4-6`) so you can filter by source model.
 
@@ -86,7 +101,28 @@ Azure Foundry generation now uses the Azure OpenAI-compatible Responses API with
 
 `DeepSeek-V3.2` was removed from the default Foundry model list because Microsoft documents it as not supporting tool calling, which makes it a poor fit for grounded web-search generation.
 
-These are defined in `BlogGenerator/appsettings.json`. Runtime auth/integration values come from environment variables only: `ANTHROPIC_API_KEY`, `FOUNDRY_OPENAI_ENDPOINT`, and `FOUNDRY_PROJECT_API_KEY`.
+### Venice: two models, because its search is single-shot
+
+Venice grounds requests with a provider-side web search toggled through `venice_parameters`, not
+with an agentic tool loop the model can call repeatedly. One request buys one retrieval pass, so
+the provider splits the work in two:
+
+1. **Brain (`grok-4-6`)** — runs one grounded research call per angle (vendor engineering blogs,
+   official changelogs and release notes, GitHub releases, developer news coverage), which is how
+   the "at least 4 distinct search attempts" requirement is honored on this provider. Each pass
+   returns a factual brief that separates in-window findings from older context, and Venice's
+   citation payload supplies verbatim source URLs. `grok-4-6` was picked because it was the most
+   disciplined of the candidates tested about *dates* — correctly refusing to pass an older
+   release off as this week's news, which is the decision that drives NEWS vs. EVERGREEN mode.
+2. **Writer (`claude-sonnet-5`)** — composes the post from the merged dossier with search off. It
+   keeps the blog's established voice (the Anthropic path uses `claude-sonnet-4-6`) and is both
+   stronger and cheaper than `claude-sonnet-4-6` on Venice's price list.
+
+A failed research pass is logged and skipped rather than aborting the run; the remaining passes
+still ground the post. Venice models emit superscript citation markers (`^4^`, `^1,5,8^`) inline,
+which the provider strips before the post is written to disk.
+
+These are defined in `BlogGenerator/appsettings.json`. Runtime auth/integration values come from environment variables only: `ANTHROPIC_API_KEY`, `FOUNDRY_OPENAI_ENDPOINT`, `FOUNDRY_PROJECT_API_KEY`, and `VENICE_API_KEY`.
 
 Tags are derived automatically from section headings/TL;DR content plus the model name (e.g., `claude`). No manual tag list is required.
 
@@ -107,6 +143,9 @@ Repo → Settings → Secrets and variables → Actions:
 
 ANTHROPIC_API_KEY — from your Anthropic account.
 
+VENICE_API_KEY — from Venice.ai → Settings → API. Only needed if you run the `venice` provider.
+Venice bills per request against a prepaid USD/DIEM balance; a zero balance returns HTTP 402.
+
 ## Notes & tips
 
 Models with web search: Claude 3.7 Sonnet and newer (plus several others) support this tool; see the docs for the supported list.
@@ -119,7 +158,7 @@ Domain control: Set AllowedDomains to bias sources you trust (e.g., arxiv.org, b
 
 Schedule & publish time: Adjust cron and the front-matter timestamp to your preference.
 
-Manual test: Use the workflow's Run workflow button to test once you add the secret. You can select `anthropic` or `foundry` as the provider.
+Manual test: Use the workflow's Run workflow button to test once you add the secret. You can select `anthropic`, `foundry`, or `venice` as the provider.
 
 # Content cadence & tone
 

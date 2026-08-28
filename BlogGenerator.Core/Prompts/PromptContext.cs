@@ -7,4 +7,5 @@ public sealed record PromptContext(
     string SystemPrompt,
     string UserPrompt,
     List<string> UserInstructionItems,
-    string PrimaryLinkLine);
+    string PrimaryLinkLine,
+    string GuidanceBlock);
