@@ -8,7 +8,7 @@ public class TagInferrerTests
     public void InfersTagsFromHeadings()
     {
         var md = "# Azure OpenAI Gets Faster\n## Performance Benchmarks\n**TL;DR** Azure is faster now.";
-        var tags = TagInferrer.Infer(md, "claude-sonnet-4-6");
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-4-6"]);
         Assert.NotEmpty(tags);
         Assert.Contains("azure", tags);
     }
@@ -17,7 +17,7 @@ public class TagInferrerTests
     public void AddsAiTagIfPresent()
     {
         var md = "# Some AI News\nAI is everywhere.";
-        var tags = TagInferrer.Infer(md, "gpt-4");
+        var tags = TagInferrer.Infer(md, ["gpt-4"]);
         Assert.Contains("ai", tags);
     }
 
@@ -25,8 +25,63 @@ public class TagInferrerTests
     public void AddsModelTag()
     {
         var md = "# Some News\nContent here.";
-        var tags = TagInferrer.Infer(md, "claude-sonnet-4-6");
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-4-6"]);
         Assert.Contains("claude-sonnet-4-6", tags);
+    }
+
+    [Fact]
+    public void TagsEveryModelInABrainWriterRun()
+    {
+        var md = "# Some News\nContent here.";
+
+        var tags = TagInferrer.Infer(md, ["grok-4-6", "claude-sonnet-5"]);
+
+        Assert.Contains("grok-4-6", tags);
+        Assert.Contains("claude-sonnet-5", tags);
+    }
+
+    [Fact]
+    public void ModelTagsSurviveTheCapAtTopicTagsExpense()
+    {
+        var md = "# Alpha Beta Gamma Delta Epsilon Zeta Eta Theta\n" +
+                 "## Iota Kappa Lambda Mu\nSome AI content.";
+
+        var tags = TagInferrer.Infer(md, ["grok-4-6", "claude-sonnet-5"]);
+
+        Assert.True(tags.Count <= 6, $"expected at most 6 tags, got [{string.Join(", ", tags)}]");
+        Assert.Contains("grok-4-6", tags);
+        Assert.Contains("claude-sonnet-5", tags);
+    }
+
+    [Fact]
+    public void OneModelStillLeavesRoomForFiveTopicTags()
+    {
+        var md = "# Alpha Beta Gamma Delta Epsilon Zeta Eta Theta\n" +
+                 "## Iota Kappa Lambda Mu\nSome AI content.";
+
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5"]);
+
+        Assert.Equal(6, tags.Count);
+        Assert.Equal("claude-sonnet-5", tags[^1]);
+    }
+
+    [Fact]
+    public void RepeatedModelNameIsTaggedOnce()
+    {
+        var md = "# Some News\nContent here.";
+
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5", "Claude-Sonnet-5"]);
+
+        Assert.Single(tags, t => t == "claude-sonnet-5");
+    }
+
+    [Fact]
+    public void FallsBackToTheDefaultModelTagWhenNoneReported()
+    {
+        var md = "# Some News\nContent here.";
+
+        Assert.Contains("claude", TagInferrer.Infer(md, []));
+        Assert.Contains("claude", TagInferrer.Infer(md, null));
     }
 
     [Fact]
@@ -34,7 +89,7 @@ public class TagInferrerTests
     {
         var md = "# Alpha Beta Gamma Delta Epsilon Zeta Eta Theta\n" +
                  "## Iota Kappa Lambda Mu\nSome AI content.";
-        var tags = TagInferrer.Infer(md, "mymodel");
+        var tags = TagInferrer.Infer(md, ["mymodel"]);
         Assert.True(tags.Count <= 6);
     }
 
@@ -76,7 +131,7 @@ public class TagInferrerTests
                  "## What You Can Bring to Azure\n" +
                  "Some AI content about Copilot.";
 
-        var tags = TagInferrer.Infer(md, "claude-sonnet-5");
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5"]);
 
         Assert.DoesNotContain("between", tags);
         Assert.DoesNotContain("bring", tags);
@@ -152,7 +207,7 @@ public class TagInferrerTests
                  "## Further reading\n" +
                  "https://learn.microsoft.com/en-us/azure/api-management/ai-gateway-overview";
 
-        var tags = TagInferrer.Infer(md, "claude-sonnet-5");
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5"]);
 
         Assert.Contains("azure", tags);
         Assert.DoesNotContain("actually", tags);

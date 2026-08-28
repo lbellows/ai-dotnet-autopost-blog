@@ -1,3 +1,4 @@
+using BlogGenerator.Core.Configuration;
 using BlogGenerator.Core.PostGeneration;
 
 namespace BlogGenerator.Tests;
@@ -100,5 +101,35 @@ public class PostWriterTests
         var input = "Above\n\n---\n\nBelow";
         var result = PostWriter.NormalizeBrokenBullets(input);
         Assert.Equal(input, result);
+    }
+
+    [Fact]
+    public void FrontMatterTagsEveryModelThatContributed()
+    {
+        var repoRoot = Directory.CreateTempSubdirectory("blog-post-writer").FullName;
+        try
+        {
+            var settings = new GenerationSettings
+            {
+                RepoRoot = repoRoot,
+                DefaultAuthor = "the.serf",
+                ImgflipMemeEnabled = false,
+            };
+
+            var (postPath, _) = PostWriter.WritePost(
+                "# Azure Ships An Agent Gateway\n\nAzure shipped it, and Copilot picked it up. AI everywhere.",
+                settings,
+                usedModels: ["grok-4-6", "claude-sonnet-5"]);
+
+            var tagsLine = Array.Find(File.ReadAllLines(postPath), l => l.StartsWith("tags:"));
+
+            Assert.NotNull(tagsLine);
+            Assert.Contains("grok-4-6", tagsLine);
+            Assert.Contains("claude-sonnet-5", tagsLine);
+        }
+        finally
+        {
+            Directory.Delete(repoRoot, recursive: true);
+        }
     }
 }

@@ -58,7 +58,7 @@ var imgflipClient = settings.ImgflipMemeEnabled
     ? provider.GetRequiredService<ImgflipClient>()
     : null;
 
-var (postPath, memeRelPath) = PostWriter.WritePost(response.Markdown, settings, usedModel: response.UsedModel, imgflipClient: imgflipClient);
+var (postPath, memeRelPath) = PostWriter.WritePost(response.Markdown, settings, usedModels: response.UsedModels, imgflipClient: imgflipClient);
 Console.WriteLine($"Post generated: {postPath}");
 if (memeRelPath != null)
     Console.WriteLine($"Meme generated: {memeRelPath}");

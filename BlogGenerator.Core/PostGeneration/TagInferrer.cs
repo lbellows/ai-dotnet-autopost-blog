@@ -48,7 +48,7 @@ public static partial class TagInferrer
     [GeneratedRegex(@"(?:https?://|www\.)\S+", RegexOptions.IgnoreCase)]
     private static partial Regex UrlRegex();
 
-    public static List<string> Infer(string markdownBody, string? model)
+    public static List<string> Infer(string markdownBody, IReadOnlyList<string>? models)
     {
         var sections = new List<string>();
 
@@ -96,22 +96,38 @@ public static partial class TagInferrer
         if (lowerMd.Contains("ai") && !tags.Contains("ai"))
             tags.Add("ai");
 
-        var modelTag = (model ?? "claude").Trim().ToLowerInvariant();
-        if (!string.IsNullOrEmpty(modelTag) && !tags.Contains(modelTag))
-            tags.Add(modelTag);
+        // Every model that contributed gets a tag. A brain/writer run is the work of both halves,
+        // so tagging only the model that produced the prose credits half the pipeline.
+        var modelTags = NormalizeModelTags(models);
 
-        if (tags.Count == 0)
-            tags = ["ai", string.IsNullOrEmpty(modelTag) ? "claude" : modelTag];
+        // Model tags keep their slots and the topic tags give way, so a second model costs a topic
+        // rather than dropping off the end. One model still leaves room for five topics, as before.
+        var topicBudget = Math.Max(3, 6 - modelTags.Count);
+        var topics = tags.Where(t => !modelTags.Contains(t)).Take(topicBudget).ToList();
+        if (topics.Count == 0)
+            topics.Add("ai");
 
-        if (tags.Count > 6)
+        return [.. topics, .. modelTags];
+    }
+
+    // Providers report the model each stage actually reached, which can repeat when one stage's
+    // fallback lands on the model another stage already used.
+    internal static List<string> NormalizeModelTags(IReadOnlyList<string>? models)
+    {
+        var normalized = new List<string>();
+
+        foreach (var model in models ?? [])
         {
-            var core = tags.Where(t => t != modelTag).Take(5).ToList();
-            if (!string.IsNullOrEmpty(modelTag))
-                core.Add(modelTag);
-            tags = core;
+            var tag = model?.Trim().ToLowerInvariant();
+            if (!string.IsNullOrEmpty(tag) && !normalized.Contains(tag))
+                normalized.Add(tag);
         }
 
-        return tags;
+        // Nothing reported the model; the historical default names the provider this blog started on.
+        if (normalized.Count == 0)
+            normalized.Add("claude");
+
+        return normalized;
     }
 
     // How often each tag-worthy token occurs in the given text.

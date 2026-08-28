@@ -22,7 +22,7 @@ public static partial class PostWriter
     public static (string FilePath, string? MemeRelPath) WritePost(
         string markdownBody,
         GenerationSettings settings,
-        string? usedModel = null,
+        IReadOnlyList<string>? usedModels = null,
         ImgflipClient? imgflipClient = null)
     {
         markdownBody = StripLeadingInstructions(markdownBody);
@@ -74,8 +74,7 @@ public static partial class PostWriter
         var nowNy = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, EasternTimeZone);
         var publishDt = nowNy.AddMinutes(-1);
 
-        var modelTag = (usedModel ?? "claude").Trim();
-        var mergedTags = TagInferrer.Infer(markdownBody, modelTag);
+        var mergedTags = TagInferrer.Infer(markdownBody, usedModels);
 
         var offset = EasternTimeZone.GetUtcOffset(nowNy);
         var offsetStr = $"{(offset < TimeSpan.Zero ? "-" : "+")}{Math.Abs(offset.Hours):D2}{offset.Minutes:D2}";

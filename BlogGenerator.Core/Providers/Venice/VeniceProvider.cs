@@ -55,17 +55,26 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
                 settings, apiKey, ct);
         }
 
-        var dossier = await ResearchAsync(promptContext, settings, brainCandidates, apiKey, ct);
+        var research = await ResearchAsync(promptContext, settings, brainCandidates, apiKey, ct);
 
         var written = await WriteAsync(
             writerCandidates,
             PromptBuilder.WriterSystemPrompt(promptContext, settings),
-            PromptBuilder.WriterUserPrompt(promptContext, dossier),
+            PromptBuilder.WriterUserPrompt(promptContext, research.Dossier),
             webSearch: false,
             settings, apiKey, ct);
 
-        Console.WriteLine($"Venice: wrote post with {written.UsedModel}.");
-        return written;
+        // The post is the work of both halves, so both are reported: the research models ground it
+        // and the writer composes it, and each earns a tag on the published post.
+        var usedModels = research.Models
+            .Concat(written.UsedModels)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Console.WriteLine(
+            $"Venice: wrote post with {string.Join(", ", written.UsedModels)}; " +
+            $"research by {string.Join(", ", research.Models)}.");
+        return written with { UsedModels = usedModels };
     }
 
     private async Task<AIProviderResponse> WriteAsync(
@@ -94,7 +103,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         return new AIProviderResponse(markdown, completion.Model);
     }
 
-    private async Task<string> ResearchAsync(
+    private async Task<(string Dossier, IReadOnlyList<string> Models)> ResearchAsync(
         PromptContext promptContext,
         GenerationSettings settings,
         IReadOnlyList<string> brainCandidates,
@@ -110,6 +119,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             settings, promptContext.Today, promptContext.RecentStartDate);
 
         var notes = new List<string>();
+        var models = new List<string>();
         var citations = new List<VeniceCitation>();
         var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         Exception? lastErr = null;
@@ -131,7 +141,13 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
 
                 var note = CleanModelText(result.Content);
                 if (!string.IsNullOrWhiteSpace(note))
+                {
                     notes.Add($"### Research pass {i + 1} (via {result.Model})\n\n{note}");
+                    // Only a pass that contributed notes counts; a model that came back empty did
+                    // not ground the post and should not be credited on it.
+                    if (!models.Contains(result.Model, StringComparer.OrdinalIgnoreCase))
+                        models.Add(result.Model);
+                }
 
                 foreach (var citation in result.Citations)
                 {
@@ -154,7 +170,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         }
 
         Console.WriteLine($"Venice research: {notes.Count}/{angles.Count} passes succeeded, {citations.Count} unique sources.");
-        return BuildDossier(notes, citations);
+        return (BuildDossier(notes, citations), models);
     }
 
     internal static string BuildDossier(IReadOnlyList<string> notes, IReadOnlyList<VeniceCitation> citations)

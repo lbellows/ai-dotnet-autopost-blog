@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-28 — tag every model that wrote the post
+- Posts now carry a tag for each model that contributed, not just the one that produced the prose. Under Venice's brain/writer split the front matter said `claude-sonnet-5` alone, crediting the writer and leaving the `grok-4-6` research passes invisible; a two-stage run is now tagged `grok-4-6, claude-sonnet-5`.
+- `AIProviderResponse.UsedModel` became `UsedModels` (a list). Anthropic and Foundry are unchanged at the call site — a single-model constructor overload wraps their one model — and Venice concatenates the research models it actually reached with the writer's, deduplicated.
+- Only a research pass that returned usable notes credits its model, so a brain model that came back empty is not tagged on a post it did not ground.
+- `TagInferrer.Infer` takes the model list and keeps every model tag when trimming, spending topic slots instead: one model still leaves room for five topics as before, two leave four, and the total stays at six.
+
 ## 2026-08-28 — generator refactor
 - Consolidated provider plumbing into `BlogGenerator.Core/Providers/ProviderSupport.cs`. Resolving a secret from the environment, redacting that secret out of error messages, ordering the primary-then-fallbacks model list, and posting a JSON body with the API's own error text on failure were each written two or three times across the Anthropic, Foundry, and Venice providers; they are now written once.
 - Collapsed Venice's two generation paths — the single search-and-write call and the brain/writer pair — onto one `WriteAsync` helper, and removed `PromptBuilder.BuildChatMessages`, which built the same request in a different message shape than the rest of the provider.
