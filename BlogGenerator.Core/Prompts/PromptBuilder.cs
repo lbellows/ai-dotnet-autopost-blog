@@ -19,6 +19,23 @@ public static class PromptBuilder
         "or a plain news headline (\"GitHub Copilot SDK Enters Public Preview\"). " +
         "Rotate the structure—never repeat the same title formula across posts.";
 
+    // Code samples were the weakest part of generated posts: most were 3-4 line fragments the
+    // model itself labelled "pseudocode", built on APIs that don't exist. One substantial sample
+    // built from verified APIs beats three sketches, and no sample at all beats an invented one.
+    internal static string CodeGuidance(GenerationSettings settings) =>
+        $"Include AT MOST ONE code block in the whole post, and make it the centerpiece rather than an aside: " +
+        $"{settings.CodeSampleMinLines}-{settings.CodeSampleMaxLines} lines that a reader could actually orient themselves with. " +
+        "Show a complete unit of work — the relevant using/import lines, real package and type names, and the configuration, " +
+        "error path, or call site that makes it make sense — not a disembodied fragment. " +
+        "Prefer something non-obvious: a before/after migration, the failure path, or config paired with the code that reads it. " +
+        "Only use APIs, package names, and types you can verify from your sources. If you cannot write the sample against a real " +
+        "API surface, OMIT the code block entirely and explain the idea in prose — a post with no code is far better than a post " +
+        "with invented code, and no reader is expecting a snippet. " +
+        "Never label a sample as pseudocode, conceptual, illustrative, or a sketch; never emit NotImplementedException, " +
+        "'...' placeholders, or stubbed method bodies. If it needs that disclaimer, it does not belong in the post. " +
+        "A block that is only package-install or CLI-invocation lines (e.g. just 'dotnet add package X' or 'azd up') does not " +
+        "count as a code sample — fold those lines into a larger example or leave them inline in the prose.";
+
     private const string HumorGuidance =
         "Keep the tone professional yet witty—sprinkle in light, tasteful humor or asides that help the reader stay engaged.";
 
@@ -81,10 +98,15 @@ public static class PromptBuilder
             $"- A single H1 title on the first line. {TitleGuidance}",
             "- Do not include a 'Published', word-count, audience, or tags metadata line in the body; front matter and the site layout already handle that.",
             "- Open with a short summary paragraph immediately after the title (no 'TL;DR' or 'Summary' label or heading — just lead with the prose).",
-            "- Clear sections with practical takeaways (code or CLI snippets welcome).",
+            "- Clear sections with practical takeaways.",
             $"- {TechGuidance}",
             $"- {HumorGuidance}",
         };
+        if (settings.CodeSamplesEnabled)
+            guidanceLines.Add($"- {CodeGuidance(settings)}");
+        else
+            guidanceLines.Add("- Do not include code blocks; explain implementation details in prose instead.");
+
         if (settings.ImgflipMemeEnabled)
             guidanceLines.Add($"- {ImgflipGuidance(rng)}");
         guidanceLines.Add("- Cautious language for claims; avoid speculation and hallucinations.");
