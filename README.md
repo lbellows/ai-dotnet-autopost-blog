@@ -95,6 +95,8 @@ dotnet test BlogGenerator.sln
 - `VeniceResearchMaxTokens` / `VeniceResearchTemperature` — budget and creativity for each research pass (kept low so the brain stays factual).
 - `VeniceMaxTokens` / `VeniceTemperature` / `VeniceTopP` — generation parameters for the writing pass.
 - `MemeGuidanceEnabled` — toggles whether prompts instruct the model to embed a meme image.
+- `CodeSamplesEnabled` — toggles whether the prompt asks for a code sample at all. Set to `false` and posts explain implementation details in prose.
+- `CodeSampleMinLines` / `CodeSampleMaxLines` — the size band requested for the single code sample (defaults `15`/`30`). These also set the threshold `CodeSampleLinter` warns against after generation.
 - Generated posts automatically add a model tag (e.g., `claude-sonnet-4-6`) so you can filter by source model.
 
 Azure Foundry generation now uses the Azure OpenAI-compatible Responses API with API-key auth. The Foundry path hits your configured `FOUNDRY_OPENAI_ENDPOINT`, tries the configured model list in order, and forces Azure web search via the preview Responses web-search tool. The prompt also biases source selection toward your configured `AllowedDomains` list.
@@ -175,6 +177,7 @@ Switching the scheduled provider is that one line — the provider name no longe
 - Sunday runs switch to a weekly synopsis that blends news and forward-looking tips; the generator detects Sunday automatically.
 - Each post highlights at least one of .NET, Azure, or GitHub while keeping a light, professional sense of humor.
 - Memes are generated via the imgflip API (`ImgflipMemeEnabled` in `appsettings.json`). The model emits a `<!-- meme: template=..., texts="..." -->` comment choosing one template from a curated catalog; `ImgflipClient` captions that template through imgflip and the rendered image URL is spliced back into the post at the model's chosen spot. Requires `IMGFLIP_USERNAME`/`IMGFLIP_PASSWORD` secrets; if absent or the call fails, the post is published meme-free.
+- Code samples are capped at one per post and asked to be a substantial, runnable-looking example rather than a fragment (`PromptBuilder.CodeGuidance`). The prompt explicitly prefers no code block over an invented one, and bans pseudocode/conceptual labels, `NotImplementedException`, `...` placeholders, and blocks that are only `dotnet add package`/`azd up` lines. `CodeSampleLinter` re-checks the finished post against those rules and prints warnings to the run log; it never edits or deletes the post, since the pipeline publishes unattended and removing a block would orphan the prose introducing it.
 - The meme catalog (`PromptBuilder.ImgflipTemplateCatalog`) is presented to the model in a freshly shuffled order each run so it varies its pick instead of defaulting to one template (it had been over-using "Two Buttons"). To add/remove templates, edit that single list — name and box descriptions live together.
 
 # Future

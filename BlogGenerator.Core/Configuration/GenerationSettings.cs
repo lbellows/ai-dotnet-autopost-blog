@@ -43,6 +43,12 @@ public sealed class GenerationSettings
 
     public bool ImgflipMemeEnabled { get; set; }
 
+    // One substantial, verifiable code sample per post. Disable to have posts explain
+    // implementation details in prose instead. See PromptBuilder.CodeGuidance.
+    public bool CodeSamplesEnabled { get; set; } = true;
+    public int CodeSampleMinLines { get; set; }
+    public int CodeSampleMaxLines { get; set; }
+
     public void Normalize()
     {
         // Domains are compared and sent lower-cased; model names keep the casing the API expects.
@@ -77,6 +83,13 @@ public sealed class GenerationSettings
         Require(!string.IsNullOrWhiteSpace(VeniceBrainModel), "VeniceBrainModel must be set");
         Require(VeniceResearchMaxTokens > 0, "VeniceResearchMaxTokens must be greater than 0");
         Require(VeniceMaxTokens > 0, "VeniceMaxTokens must be greater than 0");
+        if (CodeSamplesEnabled)
+        {
+            Require(CodeSampleMinLines > 0, "CodeSampleMinLines must be greater than 0");
+            Require(
+                CodeSampleMaxLines >= CodeSampleMinLines,
+                "CodeSampleMaxLines must be greater than or equal to CodeSampleMinLines");
+        }
     }
 
     private static void Require(bool condition, string requirement)

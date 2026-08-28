@@ -24,6 +24,7 @@ Jekyll powers this GitHub Pages blog. `_config.yml` controls metadata, `_include
 - Venice runs two models: a brain model researches with Venice's provider-side web search, then a writer model composes the post from that dossier with search off. Venice's search is a single retrieval pass per request, not an agentic loop, so multiple search angles mean multiple research calls — see `PromptBuilder.ResearchAngles`.
 - `bundle exec jekyll serve --livereload` previews the site locally after installing the `github-pages` gem.
 - Default allowed domains bias search toward Microsoft/.NET announcements and reputable tech press; edit `AllowedDomains` in `appsettings.json` if you need changes.
+- Code-sample house rules live in `PromptBuilder.CodeGuidance` and are enforced advisory-only by `CodeSampleLinter` (warnings to the run log, never edits). Keep the sizes in `appsettings.json` (`CodeSampleMinLines`/`CodeSampleMaxLines`), not hardcoded in the prompt.
 - Posts must retain the model-name tag (e.g., `claude`) that the generator derives from content.
 - Scheduled workflow relies on the defaults in `appsettings.json`; avoid reintroducing duplicate tunables into `.github/workflows/daily-post-rag.yml`.
 - The workflow resolves the AI provider once, in its `Resolve provider` step: a `workflow_dispatch` menu choice, otherwise the `DEFAULT_AI_PROVIDER` workflow env value. Keep it that way — do not hardcode a provider name into individual steps.

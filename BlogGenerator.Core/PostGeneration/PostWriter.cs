@@ -69,6 +69,9 @@ public static partial class PostWriter
         }
 
 
+        foreach (var warning in CodeSampleLinter.Inspect(markdownBody, settings))
+            Console.WriteLine($"Code sample: {warning}");
+
         var postPath = Path.Combine(postsDir, $"{currentDay:yyyy-MM-dd}-{slug}.md");
 
         var nowNy = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, EasternTimeZone);

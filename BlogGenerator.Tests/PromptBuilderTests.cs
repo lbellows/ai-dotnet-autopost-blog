@@ -19,7 +19,48 @@ public class PromptBuilderTests
         FoundryModels = ["gpt-5.4-mini", "gpt-5-mini"],
         FoundryDefaultModel = "gpt-5.4-mini",
         FoundryMaxTokens = 4096,
+        CodeSamplesEnabled = true,
+        CodeSampleMinLines = 15,
+        CodeSampleMaxLines = 30,
     };
+
+    [Fact]
+    public void GuidanceCarriesTheConfiguredCodeSampleLength()
+    {
+        var settings = CreateSettings();
+        settings.CodeSampleMinLines = 12;
+        settings.CodeSampleMaxLines = 24;
+        var ctx = PromptBuilder.Build(settings, today: new DateOnly(2025, 6, 2));
+        Assert.Contains("12-24 lines", ctx.GuidanceBlock);
+    }
+
+    [Fact]
+    public void GuidancePrefersOmittingCodeOverInventingIt()
+    {
+        var ctx = PromptBuilder.Build(CreateSettings(), today: new DateOnly(2025, 6, 2));
+        Assert.Contains("OMIT the code block entirely", ctx.GuidanceBlock);
+        Assert.Contains("Never label a sample as pseudocode", ctx.GuidanceBlock);
+    }
+
+    [Fact]
+    public void DisablingCodeSamplesSwapsTheGuidance()
+    {
+        var settings = CreateSettings();
+        settings.CodeSamplesEnabled = false;
+        var ctx = PromptBuilder.Build(settings, today: new DateOnly(2025, 6, 2));
+        Assert.Contains("Do not include code blocks", ctx.GuidanceBlock);
+        Assert.DoesNotContain("centerpiece", ctx.GuidanceBlock);
+    }
+
+    // The Venice writer stage composes its own system prompt; it must inherit the same rules.
+    [Fact]
+    public void WriterSystemPromptInheritsCodeGuidance()
+    {
+        var settings = CreateSettings();
+        var ctx = PromptBuilder.Build(settings, today: new DateOnly(2025, 6, 2));
+        var writerPrompt = PromptBuilder.WriterSystemPrompt(ctx, settings);
+        Assert.Contains("AT MOST ONE code block", writerPrompt);
+    }
 
     [Fact]
     public void BuildProducesSundaySynopsisMode()
