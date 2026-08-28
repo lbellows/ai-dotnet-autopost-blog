@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Azure AI Stack Gets Louder, Smarter, and More Agentic — Weekly Roundup (Apr 12, 2026)"
 date: 2026-04-12 07:47:54 -0400

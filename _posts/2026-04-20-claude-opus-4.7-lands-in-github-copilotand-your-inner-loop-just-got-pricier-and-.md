@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Claude Opus 4.7 Lands in GitHub Copilot—and Your Inner Loop Just Got Pricier (and Smarter)"
 date: 2026-04-20 08:13:55 -0400

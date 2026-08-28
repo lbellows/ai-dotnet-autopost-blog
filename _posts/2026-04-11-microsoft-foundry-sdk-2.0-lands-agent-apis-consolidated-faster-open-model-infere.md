@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Foundry SDK 2.0 Lands: Agent APIs Consolidated, Faster Open-Model Inference, Fewer Packages to Babysit"
 date: 2026-04-10 21:13:07 -0400

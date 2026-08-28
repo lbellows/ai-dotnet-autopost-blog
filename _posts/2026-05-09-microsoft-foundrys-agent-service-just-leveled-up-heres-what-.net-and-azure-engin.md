@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Foundry’s Agent Service Just Leveled Up — Here’s What .NET and Azure Engineers Actually Need to Do"
 date: 2026-05-09 08:00:43 -0400

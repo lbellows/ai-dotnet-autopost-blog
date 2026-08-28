@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "`@modernize-dotnet` Is Everywhere Now: What the New GitHub Copilot Agent Means for Your .NET Stack"
 date: 2026-03-14 07:38:56 -0400

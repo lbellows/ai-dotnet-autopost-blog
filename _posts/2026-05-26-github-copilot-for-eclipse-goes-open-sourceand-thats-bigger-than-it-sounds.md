@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot for Eclipse Goes Open Source—and That’s Bigger Than It Sounds"
 date: 2026-05-26 10:09:45 -0400

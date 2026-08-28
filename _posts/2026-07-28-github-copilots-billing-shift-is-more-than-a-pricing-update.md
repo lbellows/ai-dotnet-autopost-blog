@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s Billing Shift Is More Than a Pricing Update"
 date: 2026-07-28 10:03:11 -0400

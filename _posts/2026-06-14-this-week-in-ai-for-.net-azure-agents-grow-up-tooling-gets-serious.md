@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "This Week in AI for .NET & Azure: Agents Grow Up, Tooling Gets Serious"
 date: 2026-06-14 09:03:03 -0400

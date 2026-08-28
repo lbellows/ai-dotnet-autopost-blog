@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Week AI Models Moved Closer to Production Reality"
 date: 2026-07-12 09:16:28 -0400

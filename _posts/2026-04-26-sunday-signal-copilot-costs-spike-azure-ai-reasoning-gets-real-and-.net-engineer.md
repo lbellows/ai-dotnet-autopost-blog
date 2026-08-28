@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Sunday Signal: Copilot Costs Spike, Azure AI Reasoning Gets Real, and .NET Engineers Brace for What’s Next"
 date: 2026-04-26 07:55:58 -0400

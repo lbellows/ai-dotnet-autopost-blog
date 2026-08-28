@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent Framework 1.0 Ships: Multi‑Agent AI Is Now a First‑Class .NET Citizen"
 date: 2026-04-11 12:18:44 -0400

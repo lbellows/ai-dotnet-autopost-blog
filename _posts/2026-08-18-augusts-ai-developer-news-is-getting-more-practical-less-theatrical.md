@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "August’s AI developer news is getting more practical, less theatrical"
 date: 2026-08-18 08:40:59 -0400

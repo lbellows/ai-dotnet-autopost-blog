@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Claude Opus 4.8 Lands in Azure AI Foundry—and It Changes Multi‑Model Strategy for .NET Teams"
 date: 2026-05-30 08:15:21 -0400

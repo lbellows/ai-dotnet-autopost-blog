@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "MAI‑Transcribe‑1 Lands in Azure AI Foundry — Cheaper Speech‑to‑Text for .NET Builders"
 date: 2026-04-21 08:09:13 -0400

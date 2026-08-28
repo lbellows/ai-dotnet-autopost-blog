@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "August’s AI Shipping Notes for .NET and Azure: Models, Agents, and the Bill You’ll Actually Pay"
 date: 2026-08-16 08:34:41 -0400

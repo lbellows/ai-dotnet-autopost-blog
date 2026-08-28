@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure AI Foundry’s Late‑May Tooling Update Tightens the Loop from Prompt to Production"
 date: 2026-06-01 12:46:55 -0400

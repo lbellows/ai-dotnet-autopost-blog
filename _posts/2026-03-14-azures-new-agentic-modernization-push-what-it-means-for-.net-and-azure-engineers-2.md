@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure’s new agentic modernization push: what it means for .NET and Azure engineers"
 date: 2026-03-14 11:45:07 -0400

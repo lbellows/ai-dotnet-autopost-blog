@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft’s MAI Foundational Models Land in Azure: What .NET Engineers Need to Know"
 date: 2026-04-03 07:53:12 -0400

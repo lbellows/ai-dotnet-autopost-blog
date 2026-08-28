@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure AI Just Got More Agent-Ready, and That Changes the .NET Playbook"
 date: 2026-06-16 12:34:57 -0400

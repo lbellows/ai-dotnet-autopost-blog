@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot SDK Enters Public Preview: What .NET and Azure Engineers Should Do Now"
 date: 2026-04-07 08:02:43 -0400

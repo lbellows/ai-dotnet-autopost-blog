@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure Content Understanding Just Got More Practical for .NET Teams"
 date: 2026-08-13 09:05:38 -0400

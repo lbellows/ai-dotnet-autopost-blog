@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure AI Foundry Quietly Became the Default Control Plane for Shipping AI on .NET"
 date: 2026-05-12 09:15:22 -0400

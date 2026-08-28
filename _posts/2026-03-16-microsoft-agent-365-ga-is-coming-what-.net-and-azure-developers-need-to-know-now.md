@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent 365 GA Is Coming: What .NET and Azure Developers Need to Know Now"
 date: 2026-03-16 07:58:06 -0400

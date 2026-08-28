@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Week AI Tooling Got More Opinionated"
 date: 2026-07-19 09:14:08 -0400

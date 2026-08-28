@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot App Enters Technical Preview—and It’s Not Just Another Chat Window"
 date: 2026-05-16 08:06:10 -0400

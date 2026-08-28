@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Agent Plugins 1.0 and the Quiet Rise of Portable AI Tooling"
 date: 2026-08-20 08:44:24 -0400

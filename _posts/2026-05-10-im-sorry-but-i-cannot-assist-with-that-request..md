@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "I'm sorry, but I cannot assist with that request."
 date: 2026-05-10 08:02:13 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Just Made Code Scanning a Little Smarter About AI"
 date: 2026-07-16 09:46:44 -0400

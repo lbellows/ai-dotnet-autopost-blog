@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure AI Foundry’s latest model drop makes document pipelines less of a tax"
 date: 2026-06-25 10:30:30 -0400

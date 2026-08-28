@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure AI Language Is Being Phased Out — Foundry Models Are the New Default"
 date: 2026-06-12 10:15:18 -0400

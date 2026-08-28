@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Wiring Custom Tools into Microsoft Foundry Agents with MCP on Azure Functions"
 date: 2026-04-14 08:07:57 -0400

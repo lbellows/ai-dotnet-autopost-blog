@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The AI Stack Is Moving Under Your .NET Feet"
 date: 2026-07-26 09:18:06 -0400

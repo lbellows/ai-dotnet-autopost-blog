@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Just Reframed the Agent Workflow"
 date: 2026-06-23 10:45:50 -0400

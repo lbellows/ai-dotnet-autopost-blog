@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure SDK March 2026: Mandatory MFA Is Here—What It Means for .NET and Azure AI Developers"
 date: 2026-03-27 07:56:20 -0400

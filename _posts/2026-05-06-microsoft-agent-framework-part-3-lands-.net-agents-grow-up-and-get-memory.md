@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent Framework Part 3 Lands: .NET Agents Grow Up (and Get Memory)"
 date: 2026-05-06 09:00:39 -0400

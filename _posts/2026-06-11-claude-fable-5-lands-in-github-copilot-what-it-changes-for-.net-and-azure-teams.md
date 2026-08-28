@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Claude Fable 5 Lands in GitHub Copilot — What It Changes for .NET and Azure Teams"
 date: 2026-06-11 10:54:30 -0400

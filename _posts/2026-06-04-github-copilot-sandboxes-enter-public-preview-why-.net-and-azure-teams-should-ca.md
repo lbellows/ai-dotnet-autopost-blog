@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Sandboxes Enter Public Preview — Why .NET and Azure Teams Should Care"
 date: 2026-06-04 10:09:52 -0400

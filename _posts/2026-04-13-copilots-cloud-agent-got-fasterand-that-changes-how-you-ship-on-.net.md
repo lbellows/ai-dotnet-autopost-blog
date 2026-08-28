@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Copilot’s Cloud Agent Got Faster—and That Changes How You Ship on .NET"
 date: 2026-04-13 08:12:35 -0400

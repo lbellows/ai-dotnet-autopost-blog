@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The MCP C# SDK Hits v1.0: What Every .NET Agent Builder Needs to Know Right Now"
 date: 2026-03-13 22:29:34 -0400

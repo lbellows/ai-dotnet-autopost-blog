@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Cloud Agents Grow a REST API (and Why That Matters for .NET Shops)"
 date: 2026-05-14 09:04:47 -0400

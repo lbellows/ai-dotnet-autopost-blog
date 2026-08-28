@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Foundry Agent Service Goes GA: What the March 2026 Production Upgrade Means for Your .NET Agent Workloads"
 date: 2026-03-19 07:51:11 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure’s AI Stack Just Moved Closer to “Boring in Production” — and That’s Good News"
 date: 2026-06-16 14:53:21 -0400

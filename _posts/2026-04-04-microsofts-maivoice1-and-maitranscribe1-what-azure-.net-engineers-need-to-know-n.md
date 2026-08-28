@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft’s MAI‑Voice‑1 and MAI‑Transcribe‑1: What Azure & .NET Engineers Need to Know Now"
 date: 2026-04-04 07:43:22 -0400

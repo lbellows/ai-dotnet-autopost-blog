@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "AI Toolkit for VS Code v0.32.0: Your New Production Agent Command Center"
 date: 2026-03-17 07:56:32 -0400

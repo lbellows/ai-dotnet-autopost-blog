@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s One‑Million‑Token Context Changes How You Work with Large .NET Codebases"
 date: 2026-06-08 10:52:07 -0400

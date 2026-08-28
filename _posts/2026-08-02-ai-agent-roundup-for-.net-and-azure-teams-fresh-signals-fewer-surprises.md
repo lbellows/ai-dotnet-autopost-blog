@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "AI Agent Roundup for .NET and Azure Teams: Fresh Signals, Fewer Surprises"
 date: 2026-08-02 09:16:38 -0400

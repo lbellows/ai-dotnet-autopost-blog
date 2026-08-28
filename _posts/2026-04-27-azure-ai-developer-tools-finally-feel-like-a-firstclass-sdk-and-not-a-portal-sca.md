@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure AI Developer Tools Finally Feel Like a First‑Class SDK (and Not a Portal Scavenger Hunt)"
 date: 2026-04-27 08:52:39 -0400

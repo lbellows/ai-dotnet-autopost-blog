@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s Shift to Usage‑Based Billing Changes the Math for .NET Teams"
 date: 2026-05-01 08:06:14 -0400

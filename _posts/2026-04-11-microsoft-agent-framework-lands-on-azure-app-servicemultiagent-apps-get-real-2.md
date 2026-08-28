@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent Framework Lands on Azure App Service—Multi‑Agent Apps Get Real"
 date: 2026-04-11 07:45:44 -0400

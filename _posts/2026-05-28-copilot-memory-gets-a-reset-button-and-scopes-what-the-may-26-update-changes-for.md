@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Copilot Memory Gets a Reset Button (and Scopes): What the May 26 Update Changes for .NET & Azure Devs"
 date: 2026-05-28 10:44:47 -0400

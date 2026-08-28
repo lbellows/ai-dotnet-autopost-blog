@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Sunday Signal: Agents Go Mainstream, Billing Gets Real, and Azure AI Grows Up"
 date: 2026-06-07 08:50:29 -0400

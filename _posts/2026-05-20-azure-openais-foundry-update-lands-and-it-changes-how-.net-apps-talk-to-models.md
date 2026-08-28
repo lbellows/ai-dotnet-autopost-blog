@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure OpenAI’s Foundry Update Lands — and It Changes How .NET Apps Talk to Models"
 date: 2026-05-20 09:45:52 -0400

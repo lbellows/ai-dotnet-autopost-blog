@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft’s MAI Audio Models Hit Azure Foundry: What .NET Engineers Should Care About"
 date: 2026-04-06 07:58:44 -0400

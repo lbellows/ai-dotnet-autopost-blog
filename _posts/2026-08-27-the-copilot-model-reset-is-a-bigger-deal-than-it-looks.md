@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Copilot Model Reset Is a Bigger Deal Than It Looks"
 date: 2026-08-27 17:47:07 -0400

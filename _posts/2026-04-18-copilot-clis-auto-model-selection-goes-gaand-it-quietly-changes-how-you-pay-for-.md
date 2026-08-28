@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Copilot CLI’s Auto Model Selection Goes GA—and It Quietly Changes How You Pay for AI"
 date: 2026-04-18 07:49:10 -0400

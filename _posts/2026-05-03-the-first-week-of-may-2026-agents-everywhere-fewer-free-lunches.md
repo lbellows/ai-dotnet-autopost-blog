@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The First Week of May 2026: Agents Everywhere, Fewer Free Lunches"
 date: 2026-05-03 07:58:03 -0400

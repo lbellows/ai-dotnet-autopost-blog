@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Copilot SDK Hits GA — Embedding GitHub’s Agent Brain into Your .NET Tools"
 date: 2026-06-05 10:02:49 -0400

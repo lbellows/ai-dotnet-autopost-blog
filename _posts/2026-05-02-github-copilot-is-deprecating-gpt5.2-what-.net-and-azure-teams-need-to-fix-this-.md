@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Is Deprecating GPT‑5.2 — What .NET and Azure Teams Need to Fix *This Week*"
 date: 2026-05-02 07:59:37 -0400

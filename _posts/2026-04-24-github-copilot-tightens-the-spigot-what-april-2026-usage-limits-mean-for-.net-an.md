@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Tightens the Spigot: What April 2026 Usage Limits Mean for .NET and Azure Teams"
 date: 2026-04-24 08:06:12 -0400

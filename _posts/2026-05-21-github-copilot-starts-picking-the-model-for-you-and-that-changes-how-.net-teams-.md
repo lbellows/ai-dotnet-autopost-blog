@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Starts Picking the Model for You — and That Changes How .NET Teams Ship"
 date: 2026-05-21 10:16:53 -0400

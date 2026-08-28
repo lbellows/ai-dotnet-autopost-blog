@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Week AI Got More Agentic (and a Bit More Practical) for .NET & Azure Devs"
 date: 2026-05-31 08:46:47 -0400

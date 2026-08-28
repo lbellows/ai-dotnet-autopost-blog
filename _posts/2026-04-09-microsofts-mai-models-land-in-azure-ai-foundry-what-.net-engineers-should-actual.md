@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft’s MAI models land in Azure AI Foundry: what .NET engineers should actually do with them"
 date: 2026-04-09 08:03:59 -0400

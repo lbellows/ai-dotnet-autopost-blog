@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "AI on Azure & .NET: Weekly Roundup — Week of March 15, 2026"
 date: 2026-03-15 07:40:46 -0400

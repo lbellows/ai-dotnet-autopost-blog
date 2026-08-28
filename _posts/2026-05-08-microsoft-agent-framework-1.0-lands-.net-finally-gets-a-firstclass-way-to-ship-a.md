@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent Framework 1.0 Lands: .NET Finally Gets a First‑Class Way to Ship AI Agents"
 date: 2026-05-08 08:18:48 -0400

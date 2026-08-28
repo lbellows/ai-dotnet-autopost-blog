@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure’s Copilot and Foundry Updates Quietly Rewrote the AI Playbook for .NET Teams"
 date: 2026-08-25 08:43:56 -0400

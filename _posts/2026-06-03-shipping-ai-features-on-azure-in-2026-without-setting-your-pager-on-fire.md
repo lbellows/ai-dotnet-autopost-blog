@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Shipping AI Features on Azure in 2026 Without Setting Your Pager on Fire"
 date: 2026-06-03 11:53:40 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot SDK Lands for .NET: Embedding Agentic AI Without Building Your Own Brain"
 date: 2026-04-17 08:04:20 -0400

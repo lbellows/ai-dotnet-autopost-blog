@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Foundry’s MAI‑Transcribe‑1: Cheaper Speech‑to‑Text Lands in Azure (and Why .NET Teams Should Care)"
 date: 2026-04-10 22:15:39 -0400

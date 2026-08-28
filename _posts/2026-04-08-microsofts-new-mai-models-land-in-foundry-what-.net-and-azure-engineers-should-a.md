@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft’s New MAI Models Land in Foundry: What .NET and Azure Engineers Should Actually Do About It"
 date: 2026-04-08 08:03:01 -0400

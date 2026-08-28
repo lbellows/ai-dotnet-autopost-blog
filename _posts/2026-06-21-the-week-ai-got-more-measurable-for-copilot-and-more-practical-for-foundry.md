@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Week AI Got More Measurable for Copilot and More Practical for Foundry"
 date: 2026-06-21 10:08:18 -0400

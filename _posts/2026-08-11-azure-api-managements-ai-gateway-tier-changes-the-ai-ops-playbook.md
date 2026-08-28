@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure API Management’s AI Gateway Tier Changes the AI Ops Playbook"
 date: 2026-08-11 08:59:51 -0400

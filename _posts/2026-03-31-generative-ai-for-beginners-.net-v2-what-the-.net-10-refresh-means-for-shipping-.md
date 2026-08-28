@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Generative AI for Beginners .NET v2: What the .NET 10 Refresh Means for Shipping on Azure"
 date: 2026-03-31 08:00:24 -0400

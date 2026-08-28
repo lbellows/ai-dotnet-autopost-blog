@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Hosted Agents in Azure AI Foundry Are Almost GA—and That Changes How You Ship AI on .NET"
 date: 2026-06-06 08:18:30 -0400

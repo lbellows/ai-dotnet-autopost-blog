@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot for Eclipse Goes Open Source — What That Actually Changes for AI Tooling"
 date: 2026-05-22 09:36:50 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Foundry Agent Service Goes GA: What .NET and Azure Engineers Need to Ship Production AI Agents Now"
 date: 2026-03-20 07:46:30 -0400

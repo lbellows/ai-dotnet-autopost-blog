@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "AI’s New Weekly Reality for .NET and Azure: Models, Agents, and the Bill"
 date: 2026-08-09 08:45:28 -0400

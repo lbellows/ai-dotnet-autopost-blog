@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Sunday Signals: Azure AI v1 APIs, Copilot Agents Go REST, and What .NET Teams Should Prep Next"
 date: 2026-05-17 08:05:23 -0400

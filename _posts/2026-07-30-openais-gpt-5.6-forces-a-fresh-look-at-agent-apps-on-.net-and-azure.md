@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "OpenAI’s GPT-5.6 Forces a Fresh Look at Agent Apps on .NET and Azure"
 date: 2026-07-30 09:56:34 -0400

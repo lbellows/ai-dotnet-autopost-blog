@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Sunday Signal: Model Roulette, Copilot Knobs, and the Quiet Cost War in Azure AI"
 date: 2026-04-19 07:50:08 -0400

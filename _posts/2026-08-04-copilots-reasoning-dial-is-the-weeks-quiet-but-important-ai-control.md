@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Copilot’s reasoning dial is the week’s quiet but important AI control"
 date: 2026-08-04 10:06:55 -0400

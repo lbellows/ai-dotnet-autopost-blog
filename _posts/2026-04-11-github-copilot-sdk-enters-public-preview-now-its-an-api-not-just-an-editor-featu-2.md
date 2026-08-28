@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot SDK Enters Public Preview — Now It’s an API, Not Just an Editor Feature"
 date: 2026-04-10 21:41:58 -0400

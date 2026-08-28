@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure OpenAI Is Becoming Microsoft Foundry—and That Changes the Developer Contract"
 date: 2026-06-16 14:50:54 -0400

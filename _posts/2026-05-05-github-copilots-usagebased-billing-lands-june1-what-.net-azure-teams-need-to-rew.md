@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s Usage‑Based Billing Lands June 1 — What .NET & Azure Teams Need to Rewire Now"
 date: 2026-05-05 08:12:20 -0400

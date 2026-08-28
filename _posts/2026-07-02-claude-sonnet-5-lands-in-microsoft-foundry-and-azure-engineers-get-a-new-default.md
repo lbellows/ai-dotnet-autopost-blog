@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Claude Sonnet 5 Lands in Microsoft Foundry, and Azure Engineers Get a New Default Choice"
 date: 2026-07-02 09:57:16 -0400

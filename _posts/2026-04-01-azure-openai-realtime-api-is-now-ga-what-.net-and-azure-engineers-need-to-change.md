@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure OpenAI Realtime API Is Now GA — What .NET and Azure Engineers Need to Change Before April 30"
 date: 2026-04-01 08:01:08 -0400

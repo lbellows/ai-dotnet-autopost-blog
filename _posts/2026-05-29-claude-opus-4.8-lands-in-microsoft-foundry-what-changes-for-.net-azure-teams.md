@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Claude Opus 4.8 Lands in Microsoft Foundry — What Changes for .NET & Azure Teams"
 date: 2026-05-29 10:15:16 -0400

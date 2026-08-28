@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure OpenAI Model Retirements Hit March 31, 2026 — What .NET and Azure Engineers Need to Do *Now*"
 date: 2026-03-30 08:04:44 -0400

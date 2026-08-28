@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Sunday Signal: Azure AI Gets Cheaper, Copilot Gets Smarter, and .NET Keeps Abstracting the Chaos"
 date: 2026-05-24 08:11:29 -0400

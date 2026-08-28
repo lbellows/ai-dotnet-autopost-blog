@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure MCP Tools Go Native in Visual Studio 2022—Copilot Just Got Real Azure Superpowers"
 date: 2026-04-16 08:08:50 -0400

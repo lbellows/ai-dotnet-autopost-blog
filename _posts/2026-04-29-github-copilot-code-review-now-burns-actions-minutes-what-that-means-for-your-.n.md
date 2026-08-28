@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Code Review Now Burns Actions Minutes — What That Means for Your .NET Pipelines"
 date: 2026-04-29 08:53:59 -0400

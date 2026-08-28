@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent Framework 1.0 GA: What .NET and Azure Engineers Need to Ship Agents (Now, Not Someday)"
 date: 2026-04-10 07:59:17 -0400

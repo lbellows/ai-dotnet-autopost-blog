@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Gets Bigger Brains: Larger Context Windows and Reasoning Controls Land (June 9, 2026)"
 date: 2026-06-10 10:28:38 -0400

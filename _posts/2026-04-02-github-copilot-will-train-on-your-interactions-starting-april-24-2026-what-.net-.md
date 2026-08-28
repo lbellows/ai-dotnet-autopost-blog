@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Will Train on Your Interactions Starting April 24, 2026 — What .NET and Azure Teams Need to Do Now"
 date: 2026-04-02 07:57:41 -0400

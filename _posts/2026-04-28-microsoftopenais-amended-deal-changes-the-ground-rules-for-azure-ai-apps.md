@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft–OpenAI’s Amended Deal Changes the Ground Rules for Azure AI Apps"
 date: 2026-04-28 08:58:53 -0400

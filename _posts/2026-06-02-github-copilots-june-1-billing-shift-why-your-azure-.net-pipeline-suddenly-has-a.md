@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s June 1 Billing Shift: Why Your Azure + .NET Pipeline Suddenly Has a Meter"
 date: 2026-06-02 11:10:28 -0400

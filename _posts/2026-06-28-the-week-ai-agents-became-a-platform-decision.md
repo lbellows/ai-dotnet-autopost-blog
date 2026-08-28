@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Week AI Agents Became a Platform Decision"
 date: 2026-06-28 09:43:29 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Power BI’s May 2026 Copilot Update Quietly Changed How Your AI Costs (and Queries) Behave"
 date: 2026-05-25 10:16:31 -0400

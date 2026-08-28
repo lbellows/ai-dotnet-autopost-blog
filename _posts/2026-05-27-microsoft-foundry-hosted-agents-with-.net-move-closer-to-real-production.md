@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Foundry Hosted Agents with .NET Move Closer to “Real Production”"
 date: 2026-05-27 10:32:17 -0400

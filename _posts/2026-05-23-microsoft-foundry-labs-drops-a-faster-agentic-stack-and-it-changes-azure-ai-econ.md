@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Foundry Labs Drops a Faster Agentic Stack (and It Changes Azure AI Economics)"
 date: 2026-05-23 08:07:33 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "The Microsoft Foundry Toolkit for VS Code Just Hit GA—and Your Azure AI Workflow Got Shorter"
 date: 2026-04-22 08:09:10 -0400

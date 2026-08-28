@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent 365 Is Here: What Enterprise .NET Developers Actually Need to Know"
 date: 2026-03-13 22:15:37 -0400

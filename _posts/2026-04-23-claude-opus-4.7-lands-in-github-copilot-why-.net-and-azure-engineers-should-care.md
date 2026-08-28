@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Claude Opus 4.7 Lands in GitHub Copilot — Why .NET and Azure Engineers Should Care"
 date: 2026-04-23 08:08:19 -0400

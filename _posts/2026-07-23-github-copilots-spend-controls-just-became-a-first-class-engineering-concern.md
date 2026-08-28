@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s Spend Controls Just Became a First-Class Engineering Concern"
 date: 2026-07-23 09:54:11 -0400

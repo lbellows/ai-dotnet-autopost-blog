@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot’s CLI Goes Remote — Why April 13’s Preview Matters for .NET & Azure Engineers"
 date: 2026-04-15 08:05:50 -0400

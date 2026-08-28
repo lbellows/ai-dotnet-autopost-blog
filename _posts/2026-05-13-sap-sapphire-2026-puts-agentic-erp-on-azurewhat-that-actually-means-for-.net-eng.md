@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "SAP Sapphire 2026 Puts “Agentic ERP” on Azure—What That Actually Means for .NET Engineers"
 date: 2026-05-13 09:28:51 -0400

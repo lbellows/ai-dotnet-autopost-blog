@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft Agent Framework Hits 1.0 — and Your .NET Agents Just Got M365 Superpowers"
 date: 2026-06-16 12:11:16 -0400

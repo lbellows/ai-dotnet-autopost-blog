@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "AI Toolkit for VS Code v0.32.0: The March 2026 Update That Unifies Your Agent Development Workflow"
 date: 2026-03-23 07:55:27 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Agent Swarms Go Mainstream: What Microsoft‑Style Agent Patterns Mean for .NET and Azure Engineers"
 date: 2026-03-28 07:42:29 -0400

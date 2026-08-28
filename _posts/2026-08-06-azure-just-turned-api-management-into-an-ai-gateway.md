@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Azure Just Turned API Management into an AI Gateway"
 date: 2026-08-06 10:04:26 -0400

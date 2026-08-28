@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Copilot Just Got Faster, and That Changes the Shape of Agentic Development"
 date: 2026-06-30 10:16:01 -0400

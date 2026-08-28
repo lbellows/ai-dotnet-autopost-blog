@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "AI Weekly (Mar 29, 2026): Azure AI Foundry Grows Up, .NET 10 Gets Serious About Agents, and Costs Finally Matter"
 date: 2026-03-29 07:43:37 -0400

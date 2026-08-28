@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "Microsoft’s New Foundation Models Land — What Azure & .NET Engineers Actually Need to Change"
 date: 2026-04-10 21:49:37 -0400

@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "GitHub Copilot Is Becoming an AI Runtime, Not Just a Chat Box"
 date: 2026-06-18 11:21:35 -0400

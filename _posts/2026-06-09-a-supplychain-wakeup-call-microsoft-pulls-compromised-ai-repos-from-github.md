@@ -1,4 +1,4 @@
-﻿---
+---
 layout: post
 title: "A Supply‑Chain Wake‑Up Call: Microsoft Pulls Compromised AI Repos from GitHub"
 date: 2026-06-09 09:46:51 -0400
