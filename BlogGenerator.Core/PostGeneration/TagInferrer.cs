@@ -18,6 +18,9 @@ public static partial class TagInferrer
         "create", "creating", "created", "some", "page", "pages", "step", "steps",
         // Generic English that scores well on heading frequency but makes a useless tag.
         // Without these the inferrer emits filler like "between", "bring", or "can".
+        // "actually" and "already" used to be crowded out only because punctuated junk like
+        // "unaffected." outranked them; with that gone they need to be named outright.
+        "actually", "already",
         "all", "also", "another", "any", "around", "because", "been", "before", "being",
         "below", "between", "beyond", "both", "bring", "brings", "but", "can", "cant",
         "could", "did", "does", "doing", "done", "down", "during", "each", "even", "ever",
@@ -177,14 +180,21 @@ public static partial class TagInferrer
 
             foreach (Match m in TokenRegex().Matches(stripped))
             {
-                var looksLikeIdentifier = m.Value.Any(c => char.IsDigit(c) || c is '.' or '-' or '+');
+                // The token pattern keeps a sentence-final dot, and a single dot is enough to make
+                // an ordinary word ("everywhere.") read as a versioned identifier, which then
+                // outranks the real topics. Judge the word without its punctuation.
+                var token = TrimTrailingPunctuation(m.Value);
+                if (token.Length == 0)
+                    continue;
+
+                var looksLikeIdentifier = token.Any(c => char.IsDigit(c) || c is '.' or '-' or '+');
                 var capitalizedMidSentence =
-                    char.IsUpper(m.Value[0]) && !IsSentenceStart(stripped, m.Index);
+                    char.IsUpper(token[0]) && !IsSentenceStart(stripped, m.Index);
 
                 if (!looksLikeIdentifier && !capitalizedMidSentence)
                     continue;
 
-                var normalized = NormalizeTag(m.Value);
+                var normalized = NormalizeTag(token);
                 if (!string.IsNullOrEmpty(normalized))
                     salient.Add(normalized);
             }
@@ -211,9 +221,15 @@ public static partial class TagInferrer
         "com", "org", "io", "blog", "dev", "ai", "co", "ms", "uk", "gov", "edu", "news", "app",
     };
 
+    // Tokens arrive with sentence punctuation attached because a dot and a hyphen are both
+    // legitimate inside a name (".net", "gpt-5.4", "asp.net"), so the token pattern cannot tell
+    // "everywhere." from "gpt-5.4" on its own. Only a trailing run is decoration: a leading dot
+    // belongs to ".net", and a trailing "+" belongs to "c++".
+    internal static string TrimTrailingPunctuation(string token) => token.TrimEnd('.', '-');
+
     internal static string NormalizeTag(string token)
     {
-        token = token.Trim().ToLowerInvariant();
+        token = TrimTrailingPunctuation(token.Trim()).ToLowerInvariant();
         if (string.IsNullOrEmpty(token) || Stopwords.Contains(token) || token.Length < 3)
             return "";
         if (LooksLikeDomain(token))

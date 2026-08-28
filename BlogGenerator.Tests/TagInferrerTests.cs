@@ -216,6 +216,57 @@ public class TagInferrerTests
         Assert.DoesNotContain("en-us", tags);
     }
 
+    [Theory]
+    [InlineData("everywhere.", "everywhere")]
+    [InlineData("request.", "request")]
+    [InlineData("gateway-", "gateway")]
+    public void NormalizeTagDropsSentencePunctuation(string token, string expected)
+    {
+        Assert.Equal(expected, TagInferrer.NormalizeTag(token));
+    }
+
+    [Theory]
+    [InlineData("vs.")]   // two letters once the dot goes; too short to tag
+    [InlineData("a.")]
+    [InlineData("not.")]  // a stopword the trailing dot used to hide
+    public void NormalizeTagRejectsPunctuatedFillerOnceTrimmed(string token)
+    {
+        Assert.Equal("", TagInferrer.NormalizeTag(token));
+    }
+
+    [Theory]
+    [InlineData(".net", ".net")]
+    [InlineData("asp.net", "asp.net")]
+    [InlineData("gpt-5.4", "gpt-5.4")]
+    [InlineData("c++", "c++")]
+    public void NormalizeTagKeepsPunctuationThatBelongsToTheName(string token, string expected)
+    {
+        Assert.Equal(expected, TagInferrer.NormalizeTag(token));
+    }
+
+    [Fact]
+    public void SalientTokensIgnoreWordsMadeIdentifierLikeByASentenceDot()
+    {
+        var salient = TagInferrer.CollectSalientTokens("It runs on Azure everywhere.");
+
+        Assert.Contains("azure", salient);
+        Assert.DoesNotContain("everywhere", salient);
+        Assert.DoesNotContain("everywhere.", salient);
+    }
+
+    [Fact]
+    public void InferDoesNotEmitPunctuatedTags()
+    {
+        var md = "# Azure Ships An Agent Gateway\n\n" +
+                 "Azure shipped it, and Copilot picked it up. AI everywhere.";
+
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5"]);
+
+        Assert.DoesNotContain(tags, t => t.EndsWith('.'));
+        Assert.Contains("azure", tags);
+        Assert.Contains("copilot", tags);
+    }
+
     [Fact]
     public void NormalizeTagFormatsCorrectly()
     {

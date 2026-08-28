@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-28 — stop tagging sentence punctuation
+- Tags no longer keep the punctuation that ended the sentence they came from. `everywhere.`, `client.`, `vs.`, and `a.` had all shipped as tags, because the token pattern has to allow a dot for `.net`, `asp.net`, and `gpt-5.4` and could not tell those apart.
+- The dot did more than look wrong: `CollectSalientTokens` treats any token carrying a digit, dot, hyphen, or plus as a versioned identifier, so an ordinary word with a full stop attached was ranked *above* the real topics. Salience is now judged on the trimmed word.
+- Only a trailing run of `.`/`-` is dropped, so a leading dot (`.net`) and a trailing plus (`c++`) survive. Trimming happens before the stopword and length checks, so `not.` is now caught as a stopword and `vs.` as too short.
+- Added `actually` and `already` to the generic-English stopwords. They were previously crowded out only because punctuated junk outranked them; with that junk gone they need naming outright.
+- Re-inferring all 298 published posts changes 42 tag lists, almost all reordering; the only tags lost are `client.`, `request.`, `keep`, `billing`, and `aigateway`, and the ones gained are `endpoint`, `management`, `request`, and `stack`. Published posts keep the tags already in their front matter — this affects future generation only.
+
 ## 2026-08-28 — tag every model that wrote the post
 - Posts now carry a tag for each model that contributed, not just the one that produced the prose. Under Venice's brain/writer split the front matter said `claude-sonnet-5` alone, crediting the writer and leaving the `grok-4-6` research passes invisible; a two-stage run is now tagged `grok-4-6, claude-sonnet-5`.
 - `AIProviderResponse.UsedModel` became `UsedModels` (a list). Anthropic and Foundry are unchanged at the call site — a single-model constructor overload wraps their one model — and Venice concatenates the research models it actually reached with the writer's, deduplicated.
