@@ -9,17 +9,25 @@ on:
   workflow_dispatch:
     inputs:
       ai_provider:
-        description: "AI provider to use"
+        description: "AI provider (leave on 'scheduled-default' to use the configured default)"
         required: false
-        default: "anthropic"
+        default: "scheduled-default"
         type: choice
         options:
+          - scheduled-default
           - anthropic
           - foundry
           - venice
 
 permissions:
   contents: write
+
+env:
+  # Single source of truth for which provider the scheduled run uses. Change this one line to
+  # switch it. To toggle without a commit, set an AI_PROVIDER repository variable instead
+  # (Settings -> Secrets and variables -> Actions -> Variables); it wins over this default.
+  # A manual run can still override both by picking a provider from the menu above.
+  DEFAULT_AI_PROVIDER: venice
 
 jobs:
   write-post:
@@ -29,9 +37,24 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v7
 
+      - name: Resolve provider
+        id: provider
+        env:
+          REQUESTED: ${{ inputs.ai_provider }}
+          REPO_DEFAULT: ${{ vars.AI_PROVIDER }}
+        run: |
+          # Precedence: explicit menu choice > AI_PROVIDER repo variable > DEFAULT_AI_PROVIDER.
+          # Scheduled runs supply no input, so they land on the configured default.
+          PROVIDER="$REQUESTED"
+          if [ -z "$PROVIDER" ] || [ "$PROVIDER" = "scheduled-default" ]; then
+            PROVIDER="${REPO_DEFAULT:-$DEFAULT_AI_PROVIDER}"
+          fi
+          echo "Using provider: $PROVIDER"
+          echo "name=$PROVIDER" >> "$GITHUB_OUTPUT"
+
       - name: Validate provider secrets
         env:
-          PROVIDER: ${{ inputs.ai_provider || 'foundry' }}
+          PROVIDER: ${{ steps.provider.outputs.name }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FOUNDRY_OPENAI_ENDPOINT: ${{ secrets.FOUNDRY_OPENAI_ENDPOINT }}
           FOUNDRY_PROJECT_API_KEY: ${{ secrets.FOUNDRY_PROJECT_API_KEY }}
@@ -61,9 +84,10 @@ jobs:
           VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
           IMGFLIP_USERNAME: ${{ secrets.IMGFLIP_USERNAME }}
           IMGFLIP_PASSWORD: ${{ secrets.IMGFLIP_PASSWORD }}
+          PROVIDER: ${{ steps.provider.outputs.name }}
         run: |
           dotnet --version | grep -q "^10\." || { echo "::error::.NET 10 not found on runner."; exit 1; }
-          dotnet run --project BlogGenerator -- ${{ inputs.ai_provider || 'foundry' }}
+          dotnet run --project BlogGenerator -- "$PROVIDER"
 
       - name: Commit & push if changed
         run: |

@@ -1,6 +1,9 @@
 # Changelog
 
 ## 2026-08-28
+- Resolved the daily workflow's AI provider in one place instead of repeating it across steps. A `Resolve provider` step now applies a single precedence — manual menu choice, then an `AI_PROVIDER` repository variable, then the `DEFAULT_AI_PROVIDER` workflow env value — and later steps consume its output. Switching the scheduled provider is now one line to edit, or one repo variable to flip with no commit at all.
+- Fixed the manual and scheduled runs disagreeing on a default: the dispatch menu previously defaulted to `anthropic` while the schedule fell back to `foundry`. The menu now offers `scheduled-default`, which defers to the same configured value the schedule uses.
+- Pointed the scheduled run at `venice`.
 - Added a Venice.ai provider (`dotnet run --project BlogGenerator -- venice`) targeting Venice's OpenAI-compatible chat-completions endpoint with grounding via provider-side web search (`venice_parameters.enable_web_search`).
 - Split Venice generation into a brain/writer pair because Venice's web search is a single retrieval pass per request rather than an agentic tool loop: `grok-4-6` runs one grounded research pass per source angle (vendor blogs, changelogs, GitHub releases, news coverage) and `claude-sonnet-5` writes the post from the merged dossier with search off. Clearing `VeniceWriterModel` collapses this to a single search-and-write call.
 - Both Venice stages fall back through an ordered model list, and a failed research pass is logged and skipped so the remaining passes still ground the post.

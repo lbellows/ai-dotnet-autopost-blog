@@ -26,6 +26,7 @@ Jekyll powers this GitHub Pages blog. `_config.yml` controls metadata, `_include
 - Default allowed domains bias search toward Microsoft/.NET announcements and reputable tech press; edit `AllowedDomains` in `appsettings.json` if you need changes.
 - Posts must retain the model-name tag (e.g., `claude`) that the generator derives from content.
 - Scheduled workflow relies on the defaults in `appsettings.json`; avoid reintroducing duplicate tunables into `.github/workflows/daily-post-rag.yml`.
+- The workflow resolves the AI provider once, in its `Resolve provider` step: menu choice > `AI_PROVIDER` repo variable > the `DEFAULT_AI_PROVIDER` workflow env value. Keep it that way — do not hardcode a provider name into individual steps.
 
 ## Coding Style & Naming Conventions
 Follow standard C# conventions: PascalCase for public members, camelCase for locals, four-space indentation. Generated front matter should use lowercase tags and minimal quoting. CSS stays in one file—use descriptive classes such as `.post-summary` and cluster overrides by feature.

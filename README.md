@@ -158,7 +158,17 @@ Domain control: Set AllowedDomains to bias sources you trust (e.g., arxiv.org, b
 
 Schedule & publish time: Adjust cron and the front-matter timestamp to your preference.
 
-Manual test: Use the workflow's Run workflow button to test once you add the secret. You can select `anthropic`, `foundry`, or `venice` as the provider.
+Manual test: Use the workflow's Run workflow button to test once you add the secret. You can select `anthropic`, `foundry`, or `venice` as the provider, or leave the menu on `scheduled-default` to run whatever the schedule uses.
+
+### Switching the scheduled provider
+
+The provider is resolved once, in the workflow's `Resolve provider` step, with this precedence:
+
+1. An explicit choice from the `Run workflow` menu (that run only).
+2. An `AI_PROVIDER` repository variable — Settings → Secrets and variables → Actions → Variables. **Toggles the scheduled run with no commit.**
+3. The `DEFAULT_AI_PROVIDER` value in `.github/workflows/daily-post-rag.yml` (currently `venice`).
+
+So there is one line to edit in the repo, or one variable to flip in the UI — the provider name no longer appears in multiple steps.
 
 # Content cadence & tone
 
