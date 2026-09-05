@@ -5,6 +5,7 @@ title: "Tech Thoughts"
 tagline: "Daily, grounded posts on AI for .NET/Azure builders"
 description: "A developer-first blog: practical AI workflows, code snippets, and links to reputable sources."
 author: "Liam Bellows"
+email: "me@lbellows.com"
 
 # Author profile (kept separate from the simple `author` string so
 # templates that expect `site.author` to be a string continue to work.)
