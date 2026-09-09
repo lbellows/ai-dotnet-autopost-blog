@@ -73,7 +73,7 @@ social:
 # Set a site-wide image for social cards if you have one in /assets
 # logo: /assets/img/site-card.png
 # Site logo for header (used by minima theme)
-logo: /assets/images/robot.webp
+logo: /assets/images/robot-logo.webp
 
 # jekyll-feed config (optional: set categories/tags included in the feed)
 feed:

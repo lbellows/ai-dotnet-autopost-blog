@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-08 — real favicons instead of the 800x533 logo
+- `_includes/header.html` declared `rel="icon"` as `type="image/svg+xml"` while pointing at `assets/images/robot.webp` — an 800x533, 140 KB illustration with EXIF and an ICC profile. Every visitor downloaded it for a 16px tab icon, and Firefox stored the decoded result in its favicon cache as a 1 MB PNG.
+- Added a proper icon set cropped square to the robot's head so it still reads at 16px: `favicon.ico` at the site root (16/32/48, 15 KB), `assets/images/favicon-16.png` (1 KB), `favicon-32.png` (2.5 KB), and `apple-touch-icon.png` (180x180, 17 KB, quantized to 128 colours). The header now declares each with the right `type` and `sizes`.
+- The header logo `<img>` was the same full-size file scaled down by CSS to 56px tall. It now uses `assets/images/robot-logo.webp` (168x112, 5.4 KB — 2x the rendered height) and carries `width`/`height` so it does not shift layout on load.
+- `assets/images/robot.webp` stays in place: seven published posts embed it inline as their meme image.
+
 ## 2026-08-28 — stop tagging sentence punctuation
 - Tags no longer keep the punctuation that ended the sentence they came from. `everywhere.`, `client.`, `vs.`, and `a.` had all shipped as tags, because the token pattern has to allow a dot for `.net`, `asp.net`, and `gpt-5.4` and could not tell those apart.
 - The dot did more than look wrong: `CollectSalientTokens` treats any token carrying a digit, dot, hyphen, or plus as a versioned identifier, so an ordinary word with a full stop attached was ranked *above* the real topics. Salience is now judged on the trimmed word.
