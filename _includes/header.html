@@ -1,10 +1,13 @@
 <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
-<link rel="icon" type="image/svg+xml" href="{{ '/assets/images/robot.webp' | relative_url }}">
+<link rel="icon" href="{{ '/favicon.ico' | relative_url }}" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/favicon-32.png' | relative_url }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/images/favicon-16.png' | relative_url }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/images/apple-touch-icon.png' | relative_url }}">
 <header class="site-header" role="banner">
     <div class="site-header-inner">
         <a class="site-logo" href="{{ '/' | relative_url }}" aria-label="Home">
             {% if site.logo %}
-            <img src="{{ site.logo | relative_url }}" alt="{{ site.title }} logo">
+            <img src="{{ site.logo | relative_url }}" alt="{{ site.title }} logo" width="168" height="112" decoding="async">
             {% endif %}
             <div class="site-title">{{ site.title }}</div>
         </a>
