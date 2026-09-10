@@ -44,13 +44,13 @@ show_drafts: false                 # drafts are not built on GitHub Pages
 theme: minima
 minima:
   date_format: "%b %-d, %Y"
-  social_links:
-    - platform: github
-      user_url: "https://github.com/lbellows"
-    # - platform: twitter
-    #   user_url: "https://twitter.com/<handle>"
-    - platform: linkedin
-      user_url: "https://www.linkedin.com/in/liambellows/"
+
+# Footer social links. GitHub Pages ships minima 2.5.2, whose `social.html`
+# reads these top-level `*_username` keys; the `minima.social_links` list form
+# belongs to minima 3.x and renders nothing here. LinkedIn is the /in/ slug.
+github_username: lbellows
+linkedin_username: liambellows
+# twitter_username: "<handle>"
 
 # =========================
 # Plugins (GitHub Pages whitelist)
