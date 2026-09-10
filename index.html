@@ -65,15 +65,31 @@ layout: default
         <a href="{{ paginator.previous_page_path | relative_url }}">&larr; Newer</a>
         {% endif %}
     </div>
+    {%- comment -%}
+      Show the first page, the last page, and a window around the current one.
+      A post a day means total_pages keeps growing, and rendering every number
+      overflowed the row on narrow screens.
+    {%- endcomment -%}
+    {%- assign window_start = paginator.page | minus: 2 -%}
+    {%- assign window_end = paginator.page | plus: 2 -%}
     <div class="pager-numbers">
+        {%- assign skipped = false -%}
         {% for p in (1..paginator.total_pages) %}
+            {%- assign show = false -%}
+            {%- if p == 1 or p == paginator.total_pages -%}{%- assign show = true -%}{%- endif -%}
+            {%- if p >= window_start and p <= window_end -%}{%- assign show = true -%}{%- endif -%}
+            {%- if show -%}
+            {%- if skipped %}<span class="pager-gap" aria-hidden="true">&hellip;</span>{% assign skipped = false -%}{%- endif -%}
             {% if p == paginator.page %}
-            <span class="pager-current">{{ p }}</span>
+            <span class="pager-current" aria-current="page">{{ p }}</span>
             {% elsif p == 1 %}
-            <a href="{{ '/' | relative_url }}">{{ p }}</a>
+            <a href="{{ '/' | relative_url }}" aria-label="Page {{ p }}">{{ p }}</a>
             {% else %}
-            <a href="{{ '/page' | append: p | relative_url }}">{{ p }}</a>
+            <a href="{{ '/page' | append: p | relative_url }}" aria-label="Page {{ p }}">{{ p }}</a>
             {% endif %}
+            {%- else -%}
+            {%- assign skipped = true -%}
+            {%- endif -%}
         {% endfor %}
     </div>
     <div>

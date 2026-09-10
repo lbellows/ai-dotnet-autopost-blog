@@ -131,6 +131,8 @@ body {
 
 .pager {
     display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
     justify-content: space-between;
     margin-top: 2rem;
     max-width: 1100px;
@@ -149,8 +151,16 @@ body {
 
 .pager-numbers {
     display: flex;
+    flex-wrap: wrap;
     gap: .35rem;
     align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.pager-gap {
+    color: var(--muted);
+    padding: 0 .15rem;
 }
 
 .pager-numbers a,
