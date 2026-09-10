@@ -199,6 +199,25 @@ body {
     }
 }
 
+/* Post content: keep wide markdown from pushing the page sideways.
+   Bare source URLs and wide tables were the two offenders on narrow screens;
+   code blocks scroll on their own. */
+.post-content {
+    overflow-wrap: break-word;
+}
+
+.post-content pre {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.post-content table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 /* Accessibility: focus outlines */
 a:focus {
     outline: 3px solid rgba(22, 163, 74, 0.18);
