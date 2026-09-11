@@ -37,7 +37,7 @@ cd blog
 - Scheduled workflow: `.github/workflows/daily-post-rag.yml`
 - Configuration: `BlogGenerator/appsettings.json`
 
-Provider selection at runtime via CLI arg (`anthropic`, `foundry`, or `venice`) or `AI_PROVIDER` env var.
+Provider selection at runtime via CLI arg (`anthropic`, `foundry`, `venice`, or `local`) or `AI_PROVIDER` env var.
 
 ## Run the generator locally (for testing)
 
@@ -62,6 +62,19 @@ For Venice.ai (OpenAI-compatible chat completions with provider-side web search)
 export VENICE_API_KEY="..."
 dotnet run --project BlogGenerator -- venice
 ```
+
+For a self-hosted OpenAI-compatible server (llama.cpp, llama-swap, Ollama, vLLM) — free, and
+nothing leaves the LAN:
+
+```sh
+export LOCAL_AI_BASE_URL="http://main:8080/v1"   # a bare host works too
+export LOCAL_AI_MODEL="gemma-26b"                # an id from GET /v1/models
+dotnet run --project BlogGenerator -- local
+```
+
+That researches the configured feeds and writes from what it finds. Two flags change where the
+facts come from: `--dossier <path>` writes from a brief you gathered elsewhere instead, and
+`--no-research` skips research entirely for an evergreen post with no source links.
 
 Instead of exporting anything, you can copy `.env.example` to `.env` and fill it in — the
 generator reads that file at startup. `.env` is gitignored; real environment variables always
@@ -94,6 +107,13 @@ dotnet test BlogGenerator.sln
 - `VeniceWriterModel` / `VeniceWriterFallbackModels` — the model that writes the post from the research dossier. Leave `VeniceWriterModel` empty to collapse Venice into a single search-and-write call.
 - `VeniceResearchMaxTokens` / `VeniceResearchTemperature` — budget and creativity for each research pass (kept low so the brain stays factual).
 - `VeniceMaxTokens` / `VeniceTemperature` / `VeniceTopP` — generation parameters for the writing pass.
+- `LocalMaxTokens` / `LocalTemperature` / `LocalTopP` — generation parameters for the local server. The address and model name are *not* here: they are deployment facts, so they come from `LOCAL_AI_BASE_URL` / `LOCAL_AI_MODEL`.
+- `LocalTimeoutMinutes` — how long to wait on the local server (default `30`). Deliberately generous: a cold llama-swap evicts the resident model and pages new weights onto the GPUs before the first token.
+- `LocalResearchMaxTokens` / `LocalResearchTemperature` — budget and creativity for the local research pass (kept low so it stays factual, as with Venice's brain stage).
+- `LocalResearchMaxRounds` — how many assistant turns the research pass may spend calling tools before it is told to write the dossier with what it has. One turn can carry several calls.
+- `ResearchFeeds` — the `Name`/`Url` list of publisher feeds the local research pass reads. This is its entire research surface: no search API, no key, no crawling.
+- `ResearchFeedItemsPerSource` — per-feed cap on items handed to the model. Some publishers serve their whole archive.
+- `ResearchPageMaxChars` — cap on the text of one fetched article, so a long page cannot crowd out the rest of the run.
 - `MemeGuidanceEnabled` — toggles whether prompts instruct the model to embed a meme image.
 - `CodeSamplesEnabled` — toggles whether the prompt asks for a code sample at all. Set to `false` and posts explain implementation details in prose.
 - `CodeSampleMinLines` / `CodeSampleMaxLines` — the size band requested for the single code sample (defaults `15`/`30`). These also set the threshold `CodeSampleLinter` warns against after generation.
@@ -124,7 +144,45 @@ A failed research pass is logged and skipped rather than aborting the run; the r
 still ground the post. Venice models emit superscript citation markers (`^4^`, `^1,5,8^`) inline,
 which the provider strips before the post is written to disk.
 
-These are defined in `BlogGenerator/appsettings.json`. Runtime auth/integration values come from environment variables only: `ANTHROPIC_API_KEY`, `FOUNDRY_OPENAI_ENDPOINT`, `FOUNDRY_PROJECT_API_KEY`, and `VENICE_API_KEY`.
+### Local: one model, two passes, and feeds instead of a search API
+
+The `local` provider talks to a self-hosted OpenAI-compatible server. It is single-**model** by
+design — a local box has one GPU pool, so Venice's brain/writer split would mean either evicting
+the first model or not fitting at all. On `main` that constraint is literal: llama-swap keeps one
+model resident on the two 16 GiB cards and swaps to load another.
+
+Single-model is not single-*pass*, though. Research and writing are two passes of the same model
+in the same run: no swap, no second load. The first pass gathers facts through tools and writes a
+dossier; the second writes the post from that dossier using the same writer prompts as the Venice
+writer stage, which forbid printing any URL the dossier does not contain.
+
+There is no provider-side web search behind a self-hosted server, and rather than take a
+dependency on a keyed search API, the research pass reads **publisher feeds**. It gets two tools:
+
+- `list_recent_posts` — recent articles across the configured `ResearchFeeds`, filterable by
+  source or keyword.
+- `fetch_page` — the full text of one of those articles, because a feed summary tells you a thing
+  exists but not what changed.
+
+Feeds are a good fit for the actual question this blog asks. "What shipped in the last three
+days?" wants a dated list from publishers we already trust, which is exactly what a feed is —
+whereas a search API would cost money and hand back an undated relevance ranking. The freshness
+split is computed in the tool rather than left to the model, because deciding whether a date is
+inside the window is the one thing a small local model should not be asked to do by hand.
+
+Fetching is restricted to URLs a feed actually returned, the feeds' own hosts, and
+`AllowedDomains`. A model that invents a URL is told no at the tool boundary instead of having it
+discovered in a published post.
+
+Two flags override all of this. `--dossier <path>` writes from a brief gathered elsewhere — an
+agent with real web search does better research than ten feeds, so an explicit dossier wins.
+`--no-research` skips the stage entirely, which produces an evergreen post with no source links,
+because a model with no sources should print no links rather than remembered ones.
+
+Posts from this provider are tagged `local` alongside the model name (`tags: [..., local,
+gemma-26b]`), since a model id alone does not say where the post was written.
+
+These are defined in `BlogGenerator/appsettings.json`. Runtime auth/integration values come from environment variables only: `ANTHROPIC_API_KEY`, `FOUNDRY_OPENAI_ENDPOINT`, `FOUNDRY_PROJECT_API_KEY`, `VENICE_API_KEY`, and `LOCAL_AI_BASE_URL` / `LOCAL_AI_MODEL` / `LOCAL_AI_API_KEY`.
 
 Tags are derived automatically from section headings/TL;DR content plus the model name (e.g., `claude`). No manual tag list is required.
 

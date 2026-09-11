@@ -66,6 +66,66 @@ public class TagInferrerTests
     }
 
     [Fact]
+    public void ProvenanceTagsAreKeptAndSitInFrontOfTheModelTag()
+    {
+        var md = "# Alpha Beta Gamma Delta Epsilon Zeta Eta Theta\n" +
+                 "## Iota Kappa Lambda Mu\nSome AI content.";
+
+        var tags = TagInferrer.Infer(md, ["gemma-26b"], ["local"]);
+
+        Assert.True(tags.Count <= 6, $"expected at most 6 tags, got [{string.Join(", ", tags)}]");
+        Assert.Equal(["local", "gemma-26b"], tags[^2..]);
+    }
+
+    [Fact]
+    public void ProvenanceTagCostsATopicSlotRatherThanDroppingOffTheEnd()
+    {
+        var md = "# Alpha Beta Gamma Delta Epsilon Zeta Eta Theta\n" +
+                 "## Iota Kappa Lambda Mu\nSome AI content.";
+
+        var withoutProvenance = TagInferrer.Infer(md, ["gemma-26b"]);
+        var withProvenance = TagInferrer.Infer(md, ["gemma-26b"], ["local"]);
+
+        // Same total; the provenance tag is paid for out of the topics, not appended past the cap.
+        Assert.Equal(6, withoutProvenance.Count);
+        Assert.Equal(6, withProvenance.Count);
+        Assert.Equal(5, withoutProvenance.Count(t => t != "gemma-26b"));
+        Assert.Equal(4, withProvenance.Count(t => t is not ("gemma-26b" or "local")));
+        Assert.DoesNotContain("local", withoutProvenance);
+    }
+
+    [Fact]
+    public void ProvenanceTagIsNotDuplicatedWhenItAlsoNamesAModel()
+    {
+        var md = "# Some News\nContent here.";
+
+        var tags = TagInferrer.Infer(md, ["local"], ["local", "Local"]);
+
+        Assert.Single(tags, t => t == "local");
+    }
+
+    [Fact]
+    public void NoProvenanceTagsLeavesTheTagListUnchanged()
+    {
+        var md = "# Some News\nContent here.";
+
+        Assert.Equal(TagInferrer.Infer(md, ["claude-sonnet-5"]), TagInferrer.Infer(md, ["claude-sonnet-5"], []));
+        Assert.Equal(TagInferrer.Infer(md, ["claude-sonnet-5"]), TagInferrer.Infer(md, ["claude-sonnet-5"], null));
+    }
+
+    // Front matter writes tags as a YAML flow sequence, so a colon in a local model id
+    // ("qwen3:32b") would silently turn the sequence into a mapping.
+    [Theory]
+    [InlineData("qwen3:32b", "qwen3-32b")]
+    [InlineData("hf.co/unsloth/gpt-oss-20b-GGUF", "hf.co-unsloth-gpt-oss-20b-gguf")]
+    [InlineData("claude-sonnet-5", "claude-sonnet-5")]
+    [InlineData("gpt-oss-20b", "gpt-oss-20b")]
+    public void ModelTagsAreSafeForYamlFlowSequences(string model, string expected)
+    {
+        Assert.Equal([expected], TagInferrer.NormalizeModelTags([model]));
+    }
+
+    [Fact]
     public void RepeatedModelNameIsTaggedOnce()
     {
         var md = "# Some News\nContent here.";
@@ -265,6 +325,46 @@ public class TagInferrerTests
         Assert.DoesNotContain(tags, t => t.EndsWith('.'));
         Assert.Contains("azure", tags);
         Assert.Contains("copilot", tags);
+    }
+
+    // Regression: "A 4,000-character chunk" shipped "000-character" as a tag on a published post.
+    // The token pattern has no comma, so the number splits and the fragment looks like a version.
+    [Theory]
+    [InlineData("000-character")]
+    [InlineData("500-ms")]
+    [InlineData("64-bit")]
+    [InlineData("30-80")]
+    [InlineData("1.5-x")]
+    public void NormalizeTagRejectsMeasurements(string token)
+    {
+        Assert.Equal("", TagInferrer.NormalizeTag(token));
+    }
+
+    // Only a leading digit run marks a measurement; a name that merely contains one is a name.
+    [Theory]
+    [InlineData("gpt-5")]
+    [InlineData("gpt-5.4")]
+    [InlineData(".net")]
+    [InlineData("asp.net")]
+    [InlineData("claude-sonnet-5")]
+    [InlineData("qwen38-27b")]
+    [InlineData("gemma-26b")]
+    public void NormalizeTagKeepsNamesThatCarryDigits(string token)
+    {
+        Assert.Equal(token, TagInferrer.NormalizeTag(token));
+    }
+
+    [Fact]
+    public void InferDoesNotTagFragmentsOfCommaGroupedNumbers()
+    {
+        var md = "# Chunking Is A Latency Decision\n\n" +
+                 "A 4,000-character chunk with 50% overlap compares against 1.5x more vectors " +
+                 "than a 2,000-character chunk, and the Azure retrieval path pays for it.";
+
+        var tags = TagInferrer.Infer(md, ["qwen38-27b"]);
+
+        Assert.DoesNotContain("000-character", tags);
+        Assert.DoesNotContain(tags, t => t.StartsWith("000"));
     }
 
     [Fact]

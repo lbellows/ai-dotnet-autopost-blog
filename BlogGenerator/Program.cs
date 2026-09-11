@@ -1,3 +1,4 @@
+using System.Net;
 using BlogGenerator.Core.Configuration;
 using BlogGenerator.Core.Memes;
 using BlogGenerator.Core.PostGeneration;
@@ -5,7 +6,9 @@ using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Providers;
 using BlogGenerator.Core.Providers.Anthropic;
 using BlogGenerator.Core.Providers.AzureFoundry;
+using BlogGenerator.Core.Providers.Local;
 using BlogGenerator.Core.Providers.Venice;
+using BlogGenerator.Core.Research;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,22 +33,48 @@ settings.Normalize();
 settings.Validate();
 settings.RepoRoot = repoRoot;
 
+// The local provider has no provider-side web search. By default it researches the configured
+// feeds itself first; --dossier supplies a better one gathered elsewhere, and --no-research skips
+// the stage entirely for an evergreen post with no source links.
+settings.LocalDossierPath = ReadDossierOption(args);
+settings.ResearchDisabled = args.Any(arg => arg.Equals("--no-research", StringComparison.OrdinalIgnoreCase));
+
 var services = new ServiceCollection();
+services.AddSingleton(settings);
 services.AddHttpClient<AnthropicProvider>();
 services.AddSingleton<AzureFoundryProvider>();
 services.AddHttpClient<VeniceProvider>(client => client.Timeout = TimeSpan.FromMinutes(5));
+services.AddHttpClient<LocalProvider>(client =>
+    client.Timeout = TimeSpan.FromMinutes(settings.LocalTimeoutMinutes));
+// Feeds and article pages are ordinary web requests: a minute is generous, and a slow publisher
+// should not inherit the model's half-hour patience.
+services.AddHttpClient<FeedResearchTools>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(1);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ai-dotnet-autopost-blog/1.0 (+feed research)");
+})
+// Not an optimization. Some publishers return a gzip body whether or not it was negotiated, and
+// without this the feed arrives as binary and fails to parse — which reads as a malformed feed.
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
+});
 services.AddHttpClient<ImgflipClient>();
 using var provider = services.BuildServiceProvider();
 
 // Determine provider from CLI arg or env var
-var providerName = args.Length > 0 ? args[0] : Environment.GetEnvironmentVariable("AI_PROVIDER") ?? "anthropic";
+var providerName = args.Length > 0 && !args[0].StartsWith('-')
+    ? args[0]
+    : Environment.GetEnvironmentVariable("AI_PROVIDER") ?? "anthropic";
 
 IAIProvider aiProvider = providerName.ToLowerInvariant() switch
 {
     "anthropic" or "claude" => provider.GetRequiredService<AnthropicProvider>(),
     "foundry" or "azure" => provider.GetRequiredService<AzureFoundryProvider>(),
     "venice" => provider.GetRequiredService<VeniceProvider>(),
-    _ => throw new ArgumentException($"Unknown AI provider: {providerName}. Use 'anthropic', 'foundry', or 'venice'."),
+    "local" => provider.GetRequiredService<LocalProvider>(),
+    _ => throw new ArgumentException(
+        $"Unknown AI provider: {providerName}. Use 'anthropic', 'foundry', 'venice', or 'local'."),
 };
 
 Console.WriteLine($"Using provider: {aiProvider.ProviderName}");
@@ -58,10 +87,32 @@ var imgflipClient = settings.ImgflipMemeEnabled
     ? provider.GetRequiredService<ImgflipClient>()
     : null;
 
-var (postPath, memeRelPath) = PostWriter.WritePost(response.Markdown, settings, usedModels: response.UsedModels, imgflipClient: imgflipClient);
+var (postPath, memeRelPath) = PostWriter.WritePost(
+    response.Markdown,
+    settings,
+    usedModels: response.UsedModels,
+    imgflipClient: imgflipClient,
+    extraTags: response.ExtraTags);
 Console.WriteLine($"Post generated: {postPath}");
 if (memeRelPath != null)
     Console.WriteLine($"Meme generated: {memeRelPath}");
+
+// --dossier <path>: the research brief the local provider composes the post from.
+static string? ReadDossierOption(string[] args)
+{
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (!args[i].Equals("--dossier", StringComparison.OrdinalIgnoreCase))
+            continue;
+
+        if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+            throw new ArgumentException("--dossier requires a path to the research dossier file.");
+
+        return args[i + 1];
+    }
+
+    return null;
+}
 
 // Minimal KEY=VALUE reader so `dotnet run` works locally without exporting anything first.
 // Deliberately does not overwrite variables that are already set, so CI secrets take priority.

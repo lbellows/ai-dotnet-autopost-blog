@@ -23,7 +23,8 @@ public static partial class PostWriter
         string markdownBody,
         GenerationSettings settings,
         IReadOnlyList<string>? usedModels = null,
-        ImgflipClient? imgflipClient = null)
+        ImgflipClient? imgflipClient = null,
+        IReadOnlyList<string>? extraTags = null)
     {
         markdownBody = StripLeadingInstructions(markdownBody);
         markdownBody = NormalizeBrokenBullets(markdownBody);
@@ -77,7 +78,7 @@ public static partial class PostWriter
         var nowNy = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, EasternTimeZone);
         var publishDt = nowNy.AddMinutes(-1);
 
-        var mergedTags = TagInferrer.Infer(markdownBody, usedModels);
+        var mergedTags = TagInferrer.Infer(markdownBody, usedModels, extraTags);
 
         var offset = EasternTimeZone.GetUtcOffset(nowNy);
         var offsetStr = $"{(offset < TimeSpan.Zero ? "-" : "+")}{Math.Abs(offset.Hours):D2}{offset.Minutes:D2}";

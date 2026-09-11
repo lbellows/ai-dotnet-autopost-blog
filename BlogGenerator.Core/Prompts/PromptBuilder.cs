@@ -265,6 +265,21 @@ public static class PromptBuilder
         return angles;
     }
 
+    // The dossier's shape is a contract between whichever stage researches and the writer stage,
+    // which parses it by section — so every research prompt describes it from this one place.
+    private const string DossierShape = """
+        ## In-window findings
+        Items whose PRIMARY announcement date falls inside the freshness window. For each: what shipped, who
+        shipped it, the exact date, and why an engineer should care. If there are none, write "None." and say so
+        plainly. Never stretch an older item into the window.
+
+        ## Context
+        Relevant older or undated background that would strengthen a post. Mark each with its real date.
+
+        ## Sources
+        Every URL you actually used, one per line as a plain URL followed by a short title.
+        """;
+
     public static string ResearchSystemPrompt(GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
     {
         return $"""
@@ -275,20 +290,70 @@ public static class PromptBuilder
             You are given web search results. Produce a factual research brief in Markdown — notes only, never a
             finished article — with these sections:
 
-            ## In-window findings
-            Items whose PRIMARY announcement date falls inside the freshness window. For each: what shipped, who
-            shipped it, the exact date, and why an engineer should care. If there are none, write "None." and say so
-            plainly. Never stretch an older item into the window.
-
-            ## Context
-            Relevant older or undated background that would strengthen a post. Mark each with its real date.
-
-            ## Sources
-            Every URL you actually used, one per line as a plain URL followed by a short title.
+            {DossierShape}
 
             Rules: copy dates and version numbers exactly as the sources state them; never invent a URL, a date, or a
             version. If the search results are thin, say the results were thin rather than filling the gap with
             recollection. Do not use footnote or citation markers.
+            """.ReplaceLineEndings("\n").Trim();
+    }
+
+    /// <summary>
+    /// The research prompt for a model that reads publisher feeds itself, one tool call at a time.
+    /// Unlike the Venice brain stage it is not handed results — it has to go and get them, so the
+    /// prompt is mostly method: what to call, in what order, and when to stop.
+    /// </summary>
+    public static string FeedResearchSystemPrompt(
+        GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
+    {
+        return $"""
+            You are a research assistant for a technical blog written for software engineers shipping on .NET, Azure,
+            and AI platforms. Today is {today:yyyy-MM-dd}. The freshness window for news is
+            {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
+
+            You have two tools, and they are your ONLY source of facts:
+            - list_recent_posts — what the publishers we trust have posted, already sorted into in-window and older.
+            - fetch_page — the full text of one of those articles.
+
+            You have no other knowledge of what has happened recently. Anything you did not read through a tool in
+            this conversation does not go in the brief, however sure you are of it.
+
+            Method:
+            1. Call list_recent_posts with no arguments to see the whole window across every source.
+            2. Make several more passes with different query keywords or a single source, to surface things the first
+               listing buried. Genuinely different angles — releases, SDKs, models, tooling, outages — not rewordings
+               of one query.
+            3. Call fetch_page on every article you intend to report. A feed summary tells you a thing exists; it does
+               not tell you what changed, and the post needs the second one.
+            4. Then, and only then, write the brief.
+
+            Produce a factual research brief in Markdown — notes only, never a finished article — with these sections:
+
+            {DossierShape}
+
+            Rules: copy dates and version numbers exactly as the sources state them; never invent a URL, a date, or a
+            version. Do not use footnote or citation markers. Only list a URL under Sources if a tool returned that
+            exact URL in this conversation. If the
+            window turned up nothing worth leading with, say so plainly under In-window findings and put the best
+            background you found under Context — an honest "None." is far more useful than a stretched item.
+            """.ReplaceLineEndings("\n").Trim();
+    }
+
+    public static string FeedResearchUserPrompt(GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
+    {
+        var focus = string.Join("\n", ResearchAngles(settings, today, recentStartDate)
+            .Select((angle, index) => $"{index + 1}) {angle}"));
+
+        return $"""
+            Topic focus / audience: {settings.TopicHint}
+
+            Research the angles below, then write the brief. They are what to look for, not queries to type
+            verbatim — the tools match keywords against article titles and summaries, so search with the words a
+            headline would actually use.
+
+            {focus}
+
+            Start now with list_recent_posts.
             """.ReplaceLineEndings("\n").Trim();
     }
 

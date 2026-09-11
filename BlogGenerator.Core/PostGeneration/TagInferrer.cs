@@ -51,7 +51,13 @@ public static partial class TagInferrer
     [GeneratedRegex(@"(?:https?://|www\.)\S+", RegexOptions.IgnoreCase)]
     private static partial Regex UrlRegex();
 
-    public static List<string> Infer(string markdownBody, IReadOnlyList<string>? models)
+    [GeneratedRegex(@"^\d+[-.]")]
+    private static partial Regex NumericPrefixRegex();
+
+    public static List<string> Infer(
+        string markdownBody,
+        IReadOnlyList<string>? models,
+        IReadOnlyList<string>? extraTags = null)
     {
         var sections = new List<string>();
 
@@ -103,32 +109,54 @@ public static partial class TagInferrer
         // so tagging only the model that produced the prose credits half the pipeline.
         var modelTags = NormalizeModelTags(models);
 
+        // Provenance tags the provider asked for ("local"). They sit in front of the model tags and
+        // are budgeted the same way, since they say something the model name does not.
+        var provenanceTags = NormalizeTagList(extraTags).Where(t => !modelTags.Contains(t)).ToList();
+
         // Model tags keep their slots and the topic tags give way, so a second model costs a topic
         // rather than dropping off the end. One model still leaves room for five topics, as before.
-        var topicBudget = Math.Max(3, 6 - modelTags.Count);
-        var topics = tags.Where(t => !modelTags.Contains(t)).Take(topicBudget).ToList();
+        var reservedTags = modelTags.Count + provenanceTags.Count;
+        var topicBudget = Math.Max(3, 6 - reservedTags);
+        var topics = tags
+            .Where(t => !modelTags.Contains(t) && !provenanceTags.Contains(t))
+            .Take(topicBudget)
+            .ToList();
         if (topics.Count == 0)
             topics.Add("ai");
 
-        return [.. topics, .. modelTags];
+        return [.. topics, .. provenanceTags, .. modelTags];
     }
 
     // Providers report the model each stage actually reached, which can repeat when one stage's
     // fallback lands on the model another stage already used.
     internal static List<string> NormalizeModelTags(IReadOnlyList<string>? models)
     {
-        var normalized = new List<string>();
-
-        foreach (var model in models ?? [])
-        {
-            var tag = model?.Trim().ToLowerInvariant();
-            if (!string.IsNullOrEmpty(tag) && !normalized.Contains(tag))
-                normalized.Add(tag);
-        }
+        var normalized = NormalizeTagList(models);
 
         // Nothing reported the model; the historical default names the provider this blog started on.
         if (normalized.Count == 0)
             normalized.Add("claude");
+
+        return normalized;
+    }
+
+    // Front matter writes tags as a YAML flow sequence, so a model id carrying a colon or a slash
+    // ("qwen3:32b", "hf.co/unsloth/model") would turn the sequence into a mapping or a path. Those
+    // separators become hyphens; the hosted providers' ids ("claude-sonnet-5") pass through as-is.
+    internal static List<string> NormalizeTagList(IReadOnlyList<string>? values)
+    {
+        var normalized = new List<string>();
+
+        foreach (var value in values ?? [])
+        {
+            var tag = value?.Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(tag))
+                continue;
+
+            tag = MultiDashRegex().Replace(NonTagCharRegex().Replace(tag, "-"), "-").Trim('-');
+            if (tag.Length > 0 && !normalized.Contains(tag))
+                normalized.Add(tag);
+        }
 
         return normalized;
     }
@@ -227,12 +255,26 @@ public static partial class TagInferrer
     // belongs to ".net", and a trailing "+" belongs to "c++".
     internal static string TrimTrailingPunctuation(string token) => token.TrimEnd('.', '-');
 
+    /// <summary>
+    /// Whether a token is a measurement rather than a subject: its leading component is nothing
+    /// but digits, as in "500-ms" or "64-bit".
+    /// </summary>
+    // This is also what a comma-grouped number leaves behind. The token pattern has no comma in
+    // it, so "a 4,000-character chunk" tokenizes into "4" and "000-character"; the fragment then
+    // satisfies CollectSalientTokens' "carries a digit or a hyphen" test, reads as a versioned
+    // identifier, and outranks the real topics — "000-character" shipped as a tag on a published
+    // post. Rejecting the whole class costs the occasional real term like "64-bit", which is a
+    // fair trade: a quantity has never made a tag worth filtering the blog by.
+    internal static bool LooksLikeMeasurement(string token) => NumericPrefixRegex().IsMatch(token);
+
     internal static string NormalizeTag(string token)
     {
         token = TrimTrailingPunctuation(token.Trim()).ToLowerInvariant();
         if (string.IsNullOrEmpty(token) || Stopwords.Contains(token) || token.Length < 3)
             return "";
         if (LooksLikeDomain(token))
+            return "";
+        if (LooksLikeMeasurement(token))
             return "";
         if (!HasLowerRegex().IsMatch(token))
             return "";

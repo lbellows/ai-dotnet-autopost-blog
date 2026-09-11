@@ -310,7 +310,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         if (string.IsNullOrWhiteSpace(text))
             return "";
 
-        text = ThinkingBlockRegex().Replace(text, "");
+        text = ModelText.StripThinkingBlocks(text);
         text = CitationMarkerRegex().Replace(text, "");
         return text.Trim();
     }
@@ -340,9 +340,6 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
     // citation does not leave a double space behind.
     [GeneratedRegex(@"[ \t]*\^\s*\d+(?:\s*,\s*\d+)*\s*\^")]
     private static partial Regex CitationMarkerRegex();
-
-    [GeneratedRegex(@"<think>.*?</think>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
-    private static partial Regex ThinkingBlockRegex();
 
     [GeneratedRegex(@"<[^>]+>")]
     private static partial Regex HtmlTagRegex();

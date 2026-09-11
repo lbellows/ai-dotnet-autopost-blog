@@ -41,6 +41,44 @@ public sealed class GenerationSettings
     public double? VeniceTemperature { get; set; }
     public double? VeniceTopP { get; set; }
 
+    // Local OpenAI-compatible server (llama.cpp / llama-swap / Ollama / vLLM). The server address
+    // and the model name are deployment facts rather than content defaults, so they come from the
+    // environment (LOCAL_AI_BASE_URL / LOCAL_AI_MODEL) and only the tunables live here.
+    public int LocalMaxTokens { get; set; }
+    public double? LocalTemperature { get; set; }
+    public double? LocalTopP { get; set; }
+
+    // Generous by hosted-API standards on purpose: a cold llama-swap evicts the resident model and
+    // pages new weights onto the GPUs before the first token, and local decode is slower.
+    public int LocalTimeoutMinutes { get; set; }
+
+    // The feed-reading research stage the local provider runs before it writes. Same model, same
+    // llama-swap slot — it is a first pass in the same run, not a second model to load.
+    public int LocalResearchMaxTokens { get; set; }
+    public double? LocalResearchTemperature { get; set; }
+
+    // How many assistant turns the research stage may spend calling tools before it is told to
+    // write the dossier with what it has. One turn can carry several tool calls.
+    public int LocalResearchMaxRounds { get; set; }
+
+    // Path to the research dossier the local provider writes from, set per run from --dossier.
+    // Not configuration: it names one run's scratch file, like RepoRoot names the checkout.
+    public string? LocalDossierPath { get; set; }
+
+    // Set per run from --no-research: skip the feed stage and write an evergreen post instead.
+    public bool ResearchDisabled { get; set; }
+
+    // Feeds the research stage reads. This is the whole research surface on purpose: no search
+    // API, no key, no crawl — a fixed list of publisher feeds whose items are already dated, which
+    // is exactly what a freshness window needs.
+    public List<FeedSource> ResearchFeeds { get; set; } = [];
+
+    // Per-feed cap on items handed to the model. Some publishers serve their entire archive.
+    public int ResearchFeedItemsPerSource { get; set; }
+
+    // Cap on the text of one fetched article, so a long page cannot crowd out the rest of the run.
+    public int ResearchPageMaxChars { get; set; }
+
     public bool ImgflipMemeEnabled { get; set; }
 
     // One substantial, verifiable code sample per post. Disable to have posts explain
@@ -57,6 +95,14 @@ public sealed class GenerationSettings
         FoundryModels = Clean(FoundryModels);
         VeniceBrainFallbackModels = Clean(VeniceBrainFallbackModels);
         VeniceWriterFallbackModels = Clean(VeniceWriterFallbackModels);
+
+        // A half-filled feed entry is a config typo, and dropping it beats failing the whole run
+        // over one bad row. Names are lower-cased because the model is asked to type them back.
+        ResearchFeeds = ResearchFeeds
+            .Where(feed => !string.IsNullOrWhiteSpace(feed.Name) && !string.IsNullOrWhiteSpace(feed.Url))
+            .Select(feed => new FeedSource { Name = feed.Name.Trim().ToLowerInvariant(), Url = feed.Url.Trim() })
+            .DistinctBy(feed => feed.Url, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static List<string> Clean(IEnumerable<string> values, bool lowercase = false) =>
@@ -83,6 +129,26 @@ public sealed class GenerationSettings
         Require(!string.IsNullOrWhiteSpace(VeniceBrainModel), "VeniceBrainModel must be set");
         Require(VeniceResearchMaxTokens > 0, "VeniceResearchMaxTokens must be greater than 0");
         Require(VeniceMaxTokens > 0, "VeniceMaxTokens must be greater than 0");
+        Require(LocalMaxTokens > 0, "LocalMaxTokens must be greater than 0");
+        Require(LocalTimeoutMinutes > 0, "LocalTimeoutMinutes must be greater than 0");
+        Require(LocalResearchMaxTokens > 0, "LocalResearchMaxTokens must be greater than 0");
+        Require(LocalResearchMaxRounds > 0, "LocalResearchMaxRounds must be greater than 0");
+        if (ResearchFeeds.Count > 0)
+        {
+            Require(
+                ResearchFeedItemsPerSource > 0,
+                "ResearchFeedItemsPerSource must be greater than 0 when ResearchFeeds are configured");
+            Require(
+                ResearchPageMaxChars > 0,
+                "ResearchPageMaxChars must be greater than 0 when ResearchFeeds are configured");
+            foreach (var feed in ResearchFeeds)
+            {
+                Require(
+                    Uri.TryCreate(feed.Url, UriKind.Absolute, out var feedUri) &&
+                        feedUri.Scheme is "http" or "https",
+                    $"ResearchFeeds entry '{feed.Name}' must have an absolute http(s) Url");
+            }
+        }
         if (CodeSamplesEnabled)
         {
             Require(CodeSampleMinLines > 0, "CodeSampleMinLines must be greater than 0");

@@ -203,6 +203,15 @@ public class VeniceProviderTests
 
         Assert.NotEmpty(settings.VeniceBrainModel);
         Assert.True(settings.VeniceMaxTokens > 0);
+
+        // The local research stage has nothing to read without these, and a feed that 404s is only
+        // discovered at run time, so at least check the shipped list binds and looks like URLs.
+        Assert.NotEmpty(settings.ResearchFeeds);
+        Assert.All(settings.ResearchFeeds, feed =>
+        {
+            Assert.NotEmpty(feed.Name);
+            Assert.True(Uri.TryCreate(feed.Url, UriKind.Absolute, out _), feed.Url);
+        });
     }
 
     private static GenerationSettings LoadShippedSettings()

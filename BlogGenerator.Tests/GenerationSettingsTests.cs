@@ -51,4 +51,68 @@ public class GenerationSettingsTests
         var ex = Assert.Throws<InvalidOperationException>(settings.Validate);
         Assert.Contains("TopicHint", ex.Message);
     }
+
+    // A feed row with half its fields filled in is a config typo. Dropping the row beats failing
+    // the whole run, and the model types source names back, so they are normalized to lower case.
+    [Fact]
+    public void NormalizeDropsIncompleteFeedsAndLowercasesNames()
+    {
+        var settings = CreateSettings();
+        settings.ResearchFeeds =
+        [
+            new FeedSource { Name = " DotNet ", Url = " https://devblogs.microsoft.com/dotnet/feed/ " },
+            new FeedSource { Name = "no-url", Url = "  " },
+            new FeedSource { Name = "", Url = "https://example.com/feed" },
+            new FeedSource { Name = "duplicate", Url = "https://devblogs.microsoft.com/dotnet/feed/" },
+        ];
+
+        settings.Normalize();
+
+        var feed = Assert.Single(settings.ResearchFeeds);
+        Assert.Equal("dotnet", feed.Name);
+        Assert.Equal("https://devblogs.microsoft.com/dotnet/feed/", feed.Url);
+    }
+
+    [Fact]
+    public void ValidateRejectsAFeedUrlThatIsNotAbsoluteHttp()
+    {
+        var settings = ValidSettings();
+        settings.ResearchFeeds = [new FeedSource { Name = "broken", Url = "devblogs.microsoft.com/feed" }];
+
+        var ex = Assert.Throws<InvalidOperationException>(settings.Validate);
+
+        Assert.Contains("broken", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateRequiresTheFeedCapsOnlyWhenFeedsAreConfigured()
+    {
+        var withoutFeeds = ValidSettings();
+        withoutFeeds.ResearchFeedItemsPerSource = 0;
+        withoutFeeds.ResearchPageMaxChars = 0;
+        withoutFeeds.Validate();
+
+        var withFeeds = ValidSettings();
+        withFeeds.ResearchFeedItemsPerSource = 0;
+        withFeeds.ResearchFeeds = [new FeedSource { Name = "dotnet", Url = "https://devblogs.microsoft.com/dotnet/feed/" }];
+
+        Assert.Contains("ResearchFeedItemsPerSource", Assert.Throws<InvalidOperationException>(withFeeds.Validate).Message);
+    }
+
+    private static GenerationSettings ValidSettings()
+    {
+        var settings = CreateSettings();
+        settings.VeniceBrainModel = "grok-4-6";
+        settings.VeniceResearchMaxTokens = 6000;
+        settings.VeniceMaxTokens = 8192;
+        settings.LocalMaxTokens = 8192;
+        settings.LocalTimeoutMinutes = 30;
+        settings.LocalResearchMaxTokens = 4096;
+        settings.LocalResearchMaxRounds = 10;
+        settings.ResearchFeedItemsPerSource = 15;
+        settings.ResearchPageMaxChars = 12000;
+        settings.CodeSampleMinLines = 15;
+        settings.CodeSampleMaxLines = 30;
+        return settings;
+    }
 }
