@@ -1,0 +1,115 @@
+---
+layout: default
+title: Tags
+permalink: /tags/
+---
+<div class="search-page">
+    <h1 class="tags-heading" id="tags-heading">Tags</h1>
+    <p class="search-status" id="tag-status" aria-live="polite"></p>
+    <p class="tag-back" id="tag-back" hidden><a href="{{ '/tags/' | relative_url }}">&larr; All tags</a></p>
+    <nav class="tag-cloud" id="tag-cloud" aria-label="All tags" hidden></nav>
+    <section class="posts-grid" id="tag-results" aria-label="Tagged posts"></section>
+    <p class="tag-more-wrap"><button class="tag-more" id="tag-more" type="button" hidden>Show more</button></p>
+</div>
+
+<script src="{{ '/assets/js/post-cards.js' | relative_url }}"></script>
+<script>
+(function () {
+    var INDEX_URL = '{{ "/search.json" | relative_url }}';
+    var BATCH = 24;
+
+    var heading = document.getElementById('tags-heading');
+    var status = document.getElementById('tag-status');
+    var back = document.getElementById('tag-back');
+    var cloud = document.getElementById('tag-cloud');
+    var results = document.getElementById('tag-results');
+    var more = document.getElementById('tag-more');
+
+    function getTag() {
+        var params = new URLSearchParams(window.location.search);
+        return (params.get('tag') || '').trim().toLowerCase();
+    }
+
+    function showCloud(posts) {
+        var counts = {};
+        var labels = {};
+        posts.forEach(function (post) {
+            (post.tags || []).forEach(function (raw) {
+                var tag = String(raw).toLowerCase();
+                counts[tag] = (counts[tag] || 0) + 1;
+                labels[tag] = labels[tag] || raw;
+            });
+        });
+        var tags = Object.keys(counts).sort(function (a, b) {
+            return counts[b] - counts[a] || a.localeCompare(b);
+        });
+        if (!tags.length) {
+            status.textContent = 'No tags yet.';
+            return;
+        }
+        status.textContent = tags.length + ' tag' + (tags.length === 1 ? '' : 's') + ' across ' + posts.length + ' posts';
+
+        function chip(tag) {
+            return '<a class="tag" href="' + PostCards.escapeHtml(PostCards.tagUrl(labels[tag])) + '">#' +
+                PostCards.escapeHtml(labels[tag]) +
+                '<span class="tag-count">' + counts[tag] + '</span></a>';
+        }
+
+        // Tags are inferred per post, so a long tail of one-off tags is normal.
+        // Lead with the ones that actually group posts and keep the rest a click away.
+        var repeated = tags.filter(function (tag) { return counts[tag] > 1; });
+        var shown = repeated.length ? repeated : tags;
+        cloud.innerHTML = shown.map(chip).join('');
+        cloud.hidden = false;
+
+        if (shown.length < tags.length) {
+            var rest = tags.slice(shown.length);
+            more.textContent = 'Show ' + rest.length + ' more used once';
+            more.hidden = false;
+            more.addEventListener('click', function () {
+                cloud.insertAdjacentHTML('beforeend', rest.map(chip).join(''));
+                more.hidden = true;
+            });
+        }
+    }
+
+    function showTag(posts, tag) {
+        var matched = posts.filter(function (post) {
+            return (post.tags || []).some(function (t) { return String(t).toLowerCase() === tag; });
+        });
+
+        heading.textContent = '#' + tag;
+        document.title = '#' + tag + ' · {{ site.title | escape }}';
+        back.hidden = false;
+
+        if (!matched.length) {
+            status.textContent = 'No posts tagged “' + tag + '”';
+            return;
+        }
+        status.textContent = matched.length + ' post' + (matched.length === 1 ? '' : 's') + ' tagged #' + tag;
+
+        var shown = 0;
+        function renderMore() {
+            var next = matched.slice(shown, shown + BATCH);
+            results.insertAdjacentHTML('beforeend', next.map(function (p) {
+                return PostCards.render(p, [], tag);
+            }).join(''));
+            shown += next.length;
+            more.hidden = shown >= matched.length;
+            more.textContent = 'Show more (' + (matched.length - shown) + ' left)';
+        }
+        more.addEventListener('click', renderMore);
+        renderMore();
+    }
+
+    var tag = getTag();
+    fetch(INDEX_URL)
+        .then(function (r) { return r.json(); })
+        .then(function (posts) {
+            if (tag) { showTag(posts, tag); } else { showCloud(posts); }
+        })
+        .catch(function () {
+            status.textContent = 'Tag index could not be loaded.';
+        });
+})();
+</script>

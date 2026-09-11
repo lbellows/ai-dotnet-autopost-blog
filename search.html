@@ -23,6 +23,7 @@ title: Search
     <section class="posts-grid" id="search-results" aria-label="Search results"></section>
 </div>
 
+<script src="{{ '/assets/js/post-cards.js' | relative_url }}"></script>
 <script>
 (function () {
     var INDEX_URL = '{{ "/search.json" | relative_url }}';
@@ -42,38 +43,6 @@ title: Search
         history.replaceState(null, '', url.toString());
     }
 
-    function highlight(text, terms) {
-        if (!terms.length) return escapeHtml(text);
-        var pattern = new RegExp('(' + terms.map(escapeRegex).join('|') + ')', 'gi');
-        return escapeHtml(text).replace(pattern, '<mark>$1</mark>');
-    }
-
-    function escapeHtml(s) {
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    function escapeRegex(s) {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    function renderPost(post, terms) {
-        var tagsHtml = '';
-        if (post.tags && post.tags.length) {
-            tagsHtml = '<div class="post-tags" aria-label="Tags">' +
-                post.tags.map(function(t){ return '<span class="tag">#' + escapeHtml(t) + '</span>'; }).join('') +
-                '</div>';
-        }
-        return '<article class="post-card">' +
-            '<div class="post-body">' +
-                '<div class="post-meta"><time>' + escapeHtml(post.date) + '</time></div>' +
-                '<h2 class="post-title"><a href="' + escapeHtml(post.url) + '">' + highlight(post.title, terms) + '</a></h2>' +
-                '<p class="post-excerpt">' + highlight(post.excerpt, terms) + '</p>' +
-                tagsHtml +
-                '<p><a class="read-more" href="' + escapeHtml(post.url) + '">Read More &rarr;</a></p>' +
-            '</div>' +
-        '</article>';
-    }
-
     function search(q) {
         setQuery(q);
         if (!q) {
@@ -89,7 +58,7 @@ title: Search
         status.textContent = matched.length
             ? matched.length + ' post' + (matched.length === 1 ? '' : 's') + ' found'
             : 'No posts found for \u201c' + q + '\u201d';
-        results.innerHTML = matched.map(function(p) { return renderPost(p, terms); }).join('');
+        results.innerHTML = matched.map(function(p) { return PostCards.render(p, terms); }).join('');
     }
 
     function init() {

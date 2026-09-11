@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-11 — tags are links now, and there is a page to browse them
+- Every tag chip on the home page and in search results is a link to `/tags/?tag=<tag>`, which lists just the posts carrying that tag. The chip for the tag you are filtering by is highlighted in each card, so it is obvious which of a post's tags matched.
+- `/tags/` with no query renders the whole tag cloud, sorted by post count, with the count on each chip. Tags are inferred per post, so roughly half of them are used exactly once; those are collapsed behind a "show N more used once" button rather than burying the tags that actually group posts.
+- The tag page reads the existing `search.json`, so there is no second index to build and no plugin: `jekyll-archives` is not on the GitHub Pages allowlist, and Jekyll cannot generate a page per tag without one. Filtering is client-side, and the tag is a query parameter so a filtered view is still a shareable URL.
+- Busy tags render in batches of 24 with a "show more" button — `#.net` matches 240 posts, and dumping 240 cards into the DOM on load is a lot of layout for a page most visitors will use to find one post.
+- Card rendering moved out of `search.html` into `assets/js/post-cards.js`, shared by search and tags, so the two pages cannot drift on how a card or a tag link is built.
+- Fixed a header bug this surfaced: minima makes `body` a flex column while `styles.css` pins `body` to `height: 100%`, so flex items shrink below their content. The header search row was overflowing the header and landing on top of the first element on the page — visible on the new tag page, where it covered the `#tag` heading at phone width. `.site-header` is now `flex: 0 0 auto`.
+- A "Browse tags" link sits in the footer, since otherwise the tag cloud is only reachable by clicking a tag first.
+
 ## 2026-09-11 — the local model does its own research, from feeds
 - The `local` provider now researches before it writes, instead of depending on a caller to hand it a dossier. `dotnet run --project BlogGenerator -- local` with no flags produces a grounded post.
 - This became possible because tool calling now works on every chat model on `main` — measured across all six, both emitting a call and using the result handed back. The `--jinja` chat templates plus llama.cpp's autoparser derive the call format from the template rather than a hardcoded model list.

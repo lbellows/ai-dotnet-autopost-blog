@@ -186,6 +186,8 @@ These are defined in `BlogGenerator/appsettings.json`. Runtime auth/integration 
 
 Tags are derived automatically from section headings/TL;DR content plus the model name (e.g., `claude`). No manual tag list is required.
 
+Every rendered tag is a link to `/tags/?tag=<tag>`, a client-side filtered listing built from `search.json`; `/tags/` with no query lists all tags with their post counts.
+
 ## Add the secret to GitHub Actions (alternate: CLI)
 
 You already have the UI instruction above (Repo → Settings → Secrets and variables → Actions). As an alternative you can set the secret using the GitHub CLI:
@@ -243,4 +245,4 @@ Switching the scheduled provider is that one line — the provider name no longe
 * check if search tool is getting recent items in azure models
 * figure out how to monetize
 * revisit automatic meme generation once styling and asset library are settled
-* `search.json` is loaded in full on the client (title + excerpt + tags for every post). Fine now (~260 posts); revisit once it grows large — trim per-post payload or move to a prebuilt/lazy index. No storage/build concern: repo and Jekyll build stay well within GitHub Pages limits for years at the current rate.
+* `search.json` is loaded in full on the client (title + excerpt + tags for every post) by both `/search/` and `/tags/`. Fine now (~300 posts); revisit once it grows large — trim per-post payload or move to a prebuilt/lazy index. No storage/build concern: repo and Jekyll build stay well within GitHub Pages limits for years at the current rate.
