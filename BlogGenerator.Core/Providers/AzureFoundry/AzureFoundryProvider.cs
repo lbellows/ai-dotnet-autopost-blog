@@ -24,7 +24,7 @@ public sealed class AzureFoundryProvider : IAIProvider
 
         var client = new ResponsesClient(
             credential: new ApiKeyCredential(apiKey),
-            options: new OpenAIClientOptions { Endpoint = endpoint });
+            options: new ResponsesClientOptions { Endpoint = endpoint });
 
         Exception? lastErr = null;
         foreach (var candidate in models)
