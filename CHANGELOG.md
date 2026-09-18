@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-18 — narrower freshness window
+- `RecentWindowDays` is back to 2 in `appsettings.json` (it had been 3). The Tue/Thu/Sun cadence has 2- and 3-day gaps, so a 3-day window let consecutive runs research overlapping days: the Sunday 09-13 and Tuesday 09-15 posts shared four of seven sources and landed on the same Azure OpenAI PTU/pricing material.
+
 ## 2026-09-11 — tags are links now, and there is a page to browse them
 - Every tag chip on the home page and in search results is a link to `/tags/?tag=<tag>`, which lists just the posts carrying that tag. The chip for the tag you are filtering by is highlighted in each card, so it is obvious which of a post's tags matched.
 - `/tags/` with no query renders the whole tag cloud, sorted by post count, with the count on each chip. Tags are inferred per post, so roughly half of them are used exactly once; those are collapsed behind a "show N more used once" button rather than burying the tags that actually group posts.
