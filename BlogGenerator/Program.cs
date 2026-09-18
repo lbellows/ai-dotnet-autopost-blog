@@ -80,7 +80,13 @@ IAIProvider aiProvider = providerName.ToLowerInvariant() switch
 Console.WriteLine($"Using provider: {aiProvider.ProviderName}");
 Console.WriteLine($"Repo root: {repoRoot}");
 
-var promptContext = PromptBuilder.Build(settings);
+// What we already published is the only cross-run state the generator has. Without it every run
+// researches the same fixed angles with no idea the last one did too.
+var recentPosts = PublishedHistory.Read(repoRoot, settings.RecentPostHistoryCount);
+if (recentPosts.Count > 0)
+    Console.WriteLine($"Avoiding the topics of the last {recentPosts.Count} posts (newest: {recentPosts[0].Title}).");
+
+var promptContext = PromptBuilder.Build(settings, recentPosts: recentPosts);
 var response = await aiProvider.GeneratePostAsync(promptContext, settings);
 
 var imgflipClient = settings.ImgflipMemeEnabled

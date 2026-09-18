@@ -152,7 +152,8 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
                 return new ChatTurn(ModelText.StripThinkingBlocks(turn.Content), turn.ToolCalls);
             },
             toolset,
-            PromptBuilder.FeedResearchSystemPrompt(settings, promptContext.Today, promptContext.RecentStartDate),
+            PromptBuilder.FeedResearchSystemPrompt(
+                settings, promptContext.Today, promptContext.RecentStartDate, promptContext.RecentPosts),
             PromptBuilder.FeedResearchUserPrompt(settings, promptContext.Today, promptContext.RecentStartDate),
             settings.LocalResearchMaxRounds,
             log: Console.WriteLine,

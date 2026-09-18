@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-18 — the generator can see what it already published
+- `PublishedHistory` reads the last `RecentPostHistoryCount` posts (12 by default) out of `_posts/` — date and front-matter title — and `PromptBuilder` puts that list in front of both the research stages and the writer, with a rule to open ground the archive does not already cover.
+- This was the actual cause of the repeats, not the window. The generator had no cross-run state at all: `_posts/` was touched only to avoid a filename collision, the four research angles in `PromptBuilder.ResearchAngles` are fixed strings, and Venice's search is one retrieval pass per angle — so identical queries returned the same evergreen pricing pages every run. Five of the nine posts before this were Azure OpenAI cost pieces; 09-13 and 09-15 shared four of seven sources, and 09-17 repeated the 09-13 title formula verbatim.
+- The research stages get the list too, deliberately. Telling only the writer to avoid a subject while the brain keeps bringing back a dossier made of that subject yields a worse post on the same topic rather than a different one.
+- The rule is "pick different ground", not "never mention these words" — a real in-window story about Azure pricing is still the post worth writing, so the instruction is to lead with what is new since the earlier post and say what changed.
+- Prompts are assembled with a section that drops out entirely when there is no archive (a fresh checkout, or `RecentPostHistoryCount: 0`), and the blank run it would leave behind is collapsed.
+- Not done yet: the fixed research angles, and demoting URLs the archive already cited when the Venice dossier is merged. Worth measuring what the history alone buys first.
+
 ## 2026-09-18 — narrower freshness window
 - `RecentWindowDays` is back to 2 in `appsettings.json` (it had been 3). The Tue/Thu/Sun cadence has 2- and 3-day gaps, so a 3-day window let consecutive runs research overlapping days: the Sunday 09-13 and Tuesday 09-15 posts shared four of seven sources and landed on the same Azure OpenAI PTU/pricing material.
 

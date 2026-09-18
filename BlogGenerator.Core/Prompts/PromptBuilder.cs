@@ -1,9 +1,19 @@
+using System.Text.RegularExpressions;
 using BlogGenerator.Core.Configuration;
+using BlogGenerator.Core.PostGeneration;
 
 namespace BlogGenerator.Core.Prompts;
 
-public static class PromptBuilder
+public static partial class PromptBuilder
 {
+    // A prompt section drops out entirely when there is nothing to put in it (an archive-free
+    // first run, no allowed domains), so the gap it leaves behind gets closed here.
+    [GeneratedRegex(@"\n{3,}")]
+    private static partial Regex BlankRunRegex();
+
+    private static string Tidy(string prompt) =>
+        BlankRunRegex().Replace(prompt.ReplaceLineEndings("\n"), "\n\n").Trim();
+
     private const string TechGuidance =
         "Highlight at least one of these ecosystems where relevant: .NET, Azure, or any AI related software. " +
         "Choose whichever best fits the story; covering all three is optional.";
@@ -122,6 +132,39 @@ public static class PromptBuilder
             ? "Markdown only — the one exception is the meme HTML comment described above, which must be included verbatim."
             : "Markdown only (no HTML).");
 
+    // What the blog has already published, rendered for a prompt. Without this the generator has
+    // no memory across runs: the research angles are fixed and the archive is invisible, so a thin
+    // freshness window sends every stage back to the same evergreen material. TitleGuidance has
+    // always said "never repeat the same title formula across posts", which is not a thing a model
+    // can honour without being shown the posts.
+    internal static string RecentCoverage(IReadOnlyList<PublishedPost> recentPosts)
+    {
+        if (recentPosts.Count == 0)
+            return string.Empty;
+
+        var lines = recentPosts.Select(post => $"- {post.Date:yyyy-MM-dd} — {post.Title}");
+        return $"""
+            Already published on this blog, newest first:
+            {string.Join("\n", lines)}
+            """.ReplaceLineEndings("\n").Trim();
+    }
+
+    // The writer's rule about that list. Stated as "pick different ground", not "never mention
+    // these words": a genuine in-window story about Azure pricing is still the right post to write,
+    // and a model told to avoid a subject outright will write around the news it actually found.
+    private static string RecentCoverageRule(IReadOnlyList<PublishedPost> recentPosts)
+    {
+        if (recentPosts.Count == 0)
+            return string.Empty;
+
+        return RecentCoverage(recentPosts) + "\n\n" +
+               "Do not write another post on the same subject as any of those, and do not reuse their title " +
+               "structures. If the only strong material you have overlaps one of them, lead with what is genuinely " +
+               "new since it rather than restating it, and say plainly what changed. A narrower, less obvious topic " +
+               "the list does not cover is better than a fourth pass over one it does. Never refer to these posts, " +
+               "to this list, or to the blog's own archive in the article itself.";
+    }
+
     // The post ships verbatim, so the model must never break character to talk to us.
     private static string NeverBreakCharacterRule(bool fromDossier)
     {
@@ -131,9 +174,14 @@ public static class PromptBuilder
                "it must read as a finished, self-assured post either way.";
     }
 
-    public static PromptContext Build(GenerationSettings settings, DateOnly? today = null, Random? rng = null)
+    public static PromptContext Build(
+        GenerationSettings settings,
+        DateOnly? today = null,
+        Random? rng = null,
+        IReadOnlyList<PublishedPost>? recentPosts = null)
     {
         rng ??= Random.Shared;
+        recentPosts ??= [];
         var currentDay = today ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var recentStart = currentDay.AddDays(-settings.RecentWindowDays);
         var userInstructionText = string.Join("\n",
@@ -144,6 +192,7 @@ public static class PromptBuilder
             : "";
 
         var guidanceBlock = GuidanceBlock(settings, rng);
+        var coverageRule = RecentCoverageRule(recentPosts);
 
         var systemPrompt = $"""
             {WriterRole}
@@ -160,9 +209,12 @@ public static class PromptBuilder
             audience on a still-relevant .NET/Azure/AI engineering topic. Do NOT reach for an older item (a release
             from weeks or months ago) and dress it up as fresh, and do NOT use time-sensitive framing like "this week",
             "the freshest development", or "just landed". Write it as evergreen guidance, not as news.
+
+            {coverageRule}
+
             {NeverBreakCharacterRule(fromDossier: false)}
             If the web_search tool is unavailable, do not emit tool-call markup (e.g., <|start|> tokens); respond directly with the final article.
-            """.ReplaceLineEndings("\n").Trim();
+            """;
 
         var userPrompt = $"""
             Topic focus / audience: {settings.TopicHint}
@@ -174,9 +226,11 @@ public static class PromptBuilder
         return new PromptContext(
             Today: currentDay,
             RecentStartDate: recentStart,
-            SystemPrompt: systemPrompt,
+            SystemPrompt: Tidy(systemPrompt),
             UserPrompt: userPrompt,
-            GuidanceBlock: guidanceBlock);
+            GuidanceBlock: guidanceBlock,
+            RecentPosts: recentPosts,
+            RecentCoverageRule: coverageRule);
     }
 
     public static string ModeInstructions(DateOnly today, int recentWindowDays)
@@ -280,9 +334,28 @@ public static class PromptBuilder
         Every URL you actually used, one per line as a plain URL followed by a short title.
         """;
 
-    public static string ResearchSystemPrompt(GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
+    // The research stages get the archive too, not just the writer. Telling only the writer to avoid
+    // a subject while handing it a dossier made entirely of that subject produces a worse post, not a
+    // different one — the avoidance has to reach the stage that chooses what to go and read.
+    private static string ResearchCoverageRule(IReadOnlyList<PublishedPost> recentPosts)
     {
-        return $"""
+        if (recentPosts.Count == 0)
+            return string.Empty;
+
+        return RecentCoverage(recentPosts) + "\n\n" +
+               "The brief is for the next post, so it must open ground those have not covered. Findings that would " +
+               "support a rewrite of one of them are the least useful thing you can bring back: if something you " +
+               "find overlaps one, report only what is new since that date and say what changed. Spend your later " +
+               "passes looking somewhere the list does not already go.";
+    }
+
+    public static string ResearchSystemPrompt(
+        GenerationSettings settings,
+        DateOnly today,
+        DateOnly recentStartDate,
+        IReadOnlyList<PublishedPost>? recentPosts = null)
+    {
+        return Tidy($"""
             You are a research assistant for a technical blog written for software engineers shipping on .NET, Azure,
             and AI platforms. Today is {today:yyyy-MM-dd}. The freshness window for news is
             {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
@@ -292,10 +365,12 @@ public static class PromptBuilder
 
             {DossierShape}
 
+            {ResearchCoverageRule(recentPosts ?? [])}
+
             Rules: copy dates and version numbers exactly as the sources state them; never invent a URL, a date, or a
             version. If the search results are thin, say the results were thin rather than filling the gap with
             recollection. Do not use footnote or citation markers.
-            """.ReplaceLineEndings("\n").Trim();
+            """);
     }
 
     /// <summary>
@@ -304,9 +379,12 @@ public static class PromptBuilder
     /// prompt is mostly method: what to call, in what order, and when to stop.
     /// </summary>
     public static string FeedResearchSystemPrompt(
-        GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
+        GenerationSettings settings,
+        DateOnly today,
+        DateOnly recentStartDate,
+        IReadOnlyList<PublishedPost>? recentPosts = null)
     {
-        return $"""
+        return Tidy($"""
             You are a research assistant for a technical blog written for software engineers shipping on .NET, Azure,
             and AI platforms. Today is {today:yyyy-MM-dd}. The freshness window for news is
             {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
@@ -331,12 +409,14 @@ public static class PromptBuilder
 
             {DossierShape}
 
+            {ResearchCoverageRule(recentPosts ?? [])}
+
             Rules: copy dates and version numbers exactly as the sources state them; never invent a URL, a date, or a
             version. Do not use footnote or citation markers. Only list a URL under Sources if a tool returned that
             exact URL in this conversation. If the
             window turned up nothing worth leading with, say so plainly under In-window findings and put the best
             background you found under Context — an honest "None." is far more useful than a stretched item.
-            """.ReplaceLineEndings("\n").Trim();
+            """);
     }
 
     public static string FeedResearchUserPrompt(GenerationSettings settings, DateOnly today, DateOnly recentStartDate)
@@ -361,7 +441,7 @@ public static class PromptBuilder
     // the guidance is identical to the single-call prompt minus the web_search instructions.
     public static string WriterSystemPrompt(PromptContext ctx, GenerationSettings settings)
     {
-        return $"""
+        return Tidy($"""
             {WriterRole}
             A research dossier gathered from live web search is supplied in the user message. Write a grounded
             Markdown blog post from it with:
@@ -377,10 +457,13 @@ public static class PromptBuilder
             Write a timeless, pragmatic piece for the same audience on a still-relevant .NET/Azure/AI engineering
             topic. Do NOT reach for an older item from the dossier and dress it up as fresh, and do NOT use
             time-sensitive framing like "this week", "the freshest development", or "just landed".
+
+            {ctx.RecentCoverageRule}
+
             {NeverBreakCharacterRule(fromDossier: true)}
             You have no search tool in this step: every URL you print must appear verbatim in the dossier. Never
             invent a link, a date, or a version number, and never emit footnote markers or tool-call markup.
-            """.ReplaceLineEndings("\n").Trim();
+            """);
     }
 
     public static string WriterUserPrompt(PromptContext ctx, string researchDossier)

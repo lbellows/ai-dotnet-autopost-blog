@@ -116,7 +116,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             .ToList();
 
         var researchSystem = PromptBuilder.ResearchSystemPrompt(
-            settings, promptContext.Today, promptContext.RecentStartDate);
+            settings, promptContext.Today, promptContext.RecentStartDate, promptContext.RecentPosts);
 
         var notes = new List<string>();
         var models = new List<string>();

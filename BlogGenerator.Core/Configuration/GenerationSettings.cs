@@ -9,6 +9,11 @@ public sealed class GenerationSettings
     public int MaxSearches { get; set; }
     public int RecentWindowDays { get; set; }
 
+    // How many already-published posts the prompts are shown so a run does not repeat the last
+    // one. Set to 0 to disable. Long enough to cover a few weeks of a Tue/Thu/Sun cadence; much
+    // longer and the list starts crowding the prompt with posts nobody would repeat anyway.
+    public int RecentPostHistoryCount { get; set; }
+
     public List<string> AllowedDomains { get; set; } = [];
 
     public List<string> BlockedDomains { get; set; } = [];
@@ -119,6 +124,7 @@ public sealed class GenerationSettings
         Require(PostWordsMax >= PostWordsMin, "PostWordsMax must be greater than or equal to PostWordsMin");
         Require(MaxSearches > 0, "MaxSearches must be greater than 0");
         Require(RecentWindowDays > 0, "RecentWindowDays must be greater than 0");
+        Require(RecentPostHistoryCount >= 0, "RecentPostHistoryCount must be 0 or greater");
         Require(!string.IsNullOrWhiteSpace(DefaultAuthor), "DefaultAuthor must be set");
         Require(!string.IsNullOrWhiteSpace(AnthropicModel), "AnthropicModel must be set");
         Require(AnthropicMaxTokens > 0, "AnthropicMaxTokens must be greater than 0");

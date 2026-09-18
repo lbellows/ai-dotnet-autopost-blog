@@ -97,6 +97,7 @@ dotnet test BlogGenerator.sln
 - `PostWordsMin` — minimum desired words in the generated post.
 - `PostWordsMax` — maximum desired words in the generated post.
 - `RecentWindowDays` — how many days back the web search should look when hunting for breaking news (defaults to `2`).
+- `RecentPostHistoryCount` — how many already-published posts from `_posts/` the research and writing prompts are shown so a run does not repeat the last one (defaults to `12`; `0` disables it).
 - `TopicUrl` — optional primary link to anchor the article around.
 - `DefaultAuthor` — default author name injected into front matter.
 - `AnthropicModel` — default Claude deployment slug.
