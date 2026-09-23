@@ -43,7 +43,17 @@ public sealed class AnthropicProvider(HttpClient httpClient) : IAIProvider
             },
             ct);
 
-        var markdown = ExtractText(responseBody);
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
+        var stopReason = json.TryGetProperty("stop_reason", out var sr) ? sr.GetString() : null;
+        // Sonnet 5 thinks by default and max_tokens caps thinking + article together, so a
+        // truncated post is possible; never publish one.
+        if (stopReason == "max_tokens")
+            throw new InvalidOperationException(
+                $"Anthropic hit max_tokens ({settings.AnthropicMaxTokens}) before finishing the post; raise Generation:AnthropicMaxTokens.");
+        if (stopReason == "refusal")
+            throw new InvalidOperationException("Anthropic declined the request (stop_reason: refusal).");
+
+        var markdown = ExtractText(json);
         if (string.IsNullOrWhiteSpace(markdown))
             throw new InvalidOperationException("Anthropic response did not contain text content");
 
@@ -52,9 +62,8 @@ public sealed class AnthropicProvider(HttpClient httpClient) : IAIProvider
 
     // The response is a list of content blocks; the search results and tool calls are interleaved
     // with the prose, so only the text blocks make up the article.
-    private static string ExtractText(string responseBody)
+    private static string ExtractText(JsonElement json)
     {
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
         if (!json.TryGetProperty("content", out var contentArray))
             return string.Empty;
 

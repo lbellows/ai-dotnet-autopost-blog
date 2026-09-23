@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-22 — direct Anthropic path on Sonnet 5
+- `AnthropicModel` is `claude-sonnet-5` (from `claude-sonnet-4-6`): stronger, and $2/$10 per MTok against $3/$15. It matches the Venice writer, so both paths now write in the same model.
+- `AnthropicTemperature` is `null`. Sonnet 5 rejects a non-default `temperature` with a 400, so the old `0.9` would have failed every Anthropic run.
+- `AnthropicMaxTokens` is 16000 (was 4096). Sonnet 5 runs adaptive thinking when `thinking` is omitted, and `max_tokens` caps thinking and the article together.
+- `AnthropicProvider` now throws on `stop_reason` `max_tokens` or `refusal` instead of publishing whatever partial text came back. Covered by `AnthropicProviderTests`.
+- Scheduled runs are unaffected — they use Venice (`DEFAULT_AI_PROVIDER`); this is the manual-dispatch `anthropic` option.
+
 ## 2026-09-18 — the generator can see what it already published
 - `PublishedHistory` reads the last `RecentPostHistoryCount` posts (12 by default) out of `_posts/` — date and front-matter title — and `PromptBuilder` puts that list in front of both the research stages and the writer, with a rule to open ground the archive does not already cover.
 - This was the actual cause of the repeats, not the window. The generator had no cross-run state at all: `_posts/` was touched only to avoid a filename collision, the four research angles in `PromptBuilder.ResearchAngles` are fixed strings, and Venice's search is one retrieval pass per angle — so identical queries returned the same evergreen pricing pages every run. Five of the nine posts before this were Azure OpenAI cost pieces; 09-13 and 09-15 shared four of seven sources, and 09-17 repeated the 09-13 title formula verbatim.
