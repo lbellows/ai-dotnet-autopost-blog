@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23 — drop the Sonnet 4.6 writer fallback
+- `VeniceWriterFallbackModels` is just `zai-org-glm-5-2`. `claude-sonnet-4-6` was a same-provider step down from the `claude-sonnet-5` writer, costing more per token.
+
 ## 2026-09-22 — direct Anthropic path on Sonnet 5
 - `AnthropicModel` is `claude-sonnet-5` (from `claude-sonnet-4-6`): stronger, and $2/$10 per MTok against $3/$15. It matches the Venice writer, so both paths now write in the same model.
 - `AnthropicTemperature` is `null`. Sonnet 5 rejects a non-default `temperature` with a 400, so the old `0.9` would have failed every Anthropic run.
