@@ -99,6 +99,33 @@ body {
     font-weight: 700;
 }
 
+/* On a post page the title should outrank the section headings, which minima sizes at ~2rem. */
+.post-header .post-title {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.post-content h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    margin-top: 2rem;
+}
+
+.post-content h3 {
+    font-size: 1.2rem;
+}
+
+@media (max-width: 600px) {
+    .post-header .post-title {
+        font-size: 1.65rem;
+    }
+
+    .post-content h2 {
+        font-size: 1.3rem;
+    }
+}
+
 .post-excerpt {
     color: #374151;
     margin: .5rem 0 1rem;
@@ -368,6 +395,24 @@ a:focus {
     color: var(--muted);
 }
 
+/* On a phone the logo, title, and tagline cannot share one row: the title got squeezed onto two
+   lines. Keep the title whole and give the tagline its own row. */
+@media (max-width: 600px) {
+    .site-header-inner {
+        flex-wrap: wrap;
+        row-gap: .35rem;
+    }
+
+    .site-title {
+        white-space: nowrap;
+    }
+
+    .site-sub {
+        flex-basis: 100%;
+        text-align: center;
+    }
+}
+
 /* Header search */
 .header-search-wrap {
     max-width: 1100px;
@@ -483,8 +528,15 @@ mark {
     padding: 0 1px;
 }
 
-/* Jump-link anchors on h2 headings */
+/* Jump-link anchors on h2 headings. Absolutely positioned so the (usually invisible) button takes
+   no room in the line: in flow, a heading that just filled its line wrapped the button onto a blank
+   second line and left a tall gap under the heading. */
+.post-content h2 {
+    position: relative;
+}
+
 .h2-anchor {
+    position: absolute;
     display: inline-flex;
     align-items: center;
     justify-content: center;
