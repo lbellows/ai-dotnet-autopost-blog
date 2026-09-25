@@ -54,11 +54,15 @@ public static partial class TagInferrer
     [GeneratedRegex(@"^\d+[-.]")]
     private static partial Regex NumericPrefixRegex();
 
+    [GeneratedRegex(@"^\s*```")]
+    private static partial Regex FenceRegex();
+
     public static List<string> Infer(
         string markdownBody,
         IReadOnlyList<string>? models,
         IReadOnlyList<string>? extraTags = null)
     {
+        markdownBody = StripCodeBlocks(markdownBody);
         var sections = new List<string>();
 
         foreach (var line in markdownBody.Split('\n'))
@@ -125,6 +129,23 @@ public static partial class TagInferrer
             topics.Add("ai");
 
         return [.. topics, .. provenanceTags, .. modelTags];
+    }
+
+    // Code is not prose. A dotted identifier in a sample ("context.Response.StatusCode") reads as a
+    // versioned name and outranks the real topics, and a "#" comment line reads as a heading.
+    internal static string StripCodeBlocks(string markdownBody)
+    {
+        var kept = new List<string>();
+        var inFence = false;
+        foreach (var line in markdownBody.Split('\n'))
+        {
+            if (FenceRegex().IsMatch(line))
+                inFence = !inFence;
+            else if (!inFence)
+                kept.Add(line);
+        }
+
+        return string.Join('\n', kept);
     }
 
     // Providers report the model each stage actually reached, which can repeat when one stage's

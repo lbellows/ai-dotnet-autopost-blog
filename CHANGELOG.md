@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-24 — no tags from code samples
+- `TagInferrer` drops fenced code blocks before it looks at the post. A dotted identifier in a sample (`context.Response.StatusCode`) read as a versioned name and outranked the real topics, and a `#` comment line in a bash block counted as a heading.
+
 ## 2026-09-24 — DeepSeek 4.1 Flash as the Venice brain
 - `VeniceBrainModel` is `deepseek-v4-1-flash` (from `grok-4-6`), with `grok-4-6` first in `VeniceBrainFallbackModels`. Replaying one run's research prompts: ~$0.065 and ~23 s per four-pass run against Grok 4.6's ~$0.19 and ~85 s; no note URL missing from the pass's citations, no reasoning text in the notes, and it reports "None" for an empty freshness window rather than stretching older items into it. Only two DeepSeek runs so far, hence the Grok fallback.
 - Tried and not adopted: `grok-4-7` (same price as 4.6 but ~50% more spend per run and slower), `claude-opus-5-5` (fastest, ~$0.43/run), `xiaomi-mimo-v2-5` (3 of 12 passes hit the 5-minute timeout), `z-ai-glm-5-3` (thinking consumed the whole 6000-token research budget and returned empty notes; with thinking disabled it writes its reasoning into the notes).

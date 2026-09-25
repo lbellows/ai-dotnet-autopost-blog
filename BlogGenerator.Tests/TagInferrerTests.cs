@@ -14,6 +14,27 @@ public class TagInferrerTests
     }
 
     [Fact]
+    public void IgnoresIdentifiersInsideCodeBlocks()
+    {
+        var md = "# Retry Policies in Azure API Management\nAzure APIM retries on throttling.\n\n```xml\n<retry condition=\"@(context.Response.StatusCode == 429)\" />\n```\n";
+
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5"]);
+
+        Assert.DoesNotContain(tags, t => t.Contains("statuscode"));
+        Assert.Contains("azure", tags);
+    }
+
+    [Fact]
+    public void CommentLinesInCodeBlocksAreNotHeadings()
+    {
+        var md = "# Azure Functions Cold Starts\n\n```bash\n# Kubernetes Kubernetes Kubernetes\naz functionapp create\n```\n";
+
+        var tags = TagInferrer.Infer(md, ["claude-sonnet-5"]);
+
+        Assert.DoesNotContain("kubernetes", tags);
+    }
+
+    [Fact]
     public void AddsAiTagIfPresent()
     {
         var md = "# Some AI News\nAI is everywhere.";
