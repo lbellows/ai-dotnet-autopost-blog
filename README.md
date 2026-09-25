@@ -130,17 +130,17 @@ Venice grounds requests with a provider-side web search toggled through `venice_
 with an agentic tool loop the model can call repeatedly. One request buys one retrieval pass, so
 the provider splits the work in two:
 
-1. **Brain (`deepseek-v4-1-flash`)** — runs one grounded research call per angle (vendor engineering blogs,
+1. **Brain (`grok-4-6`)** — runs one grounded research call per angle (model and platform launches,
    official changelogs and release notes, GitHub releases, developer news coverage), which is how
    the "at least 4 distinct search attempts" requirement is honored on this provider. Each pass
    returns a factual brief that separates in-window findings from older context, and Venice's
    citation payload supplies verbatim source URLs. The brain has to be disciplined about *dates* —
    refusing to pass an older release off as this week's news, which is the decision that drives
-   NEWS vs. EVERGREEN mode. `grok-4-6` earned the job on that; `deepseek-v4-1-flash` matched it
-   (see the 2026-09-24 changelog entry) at about a third of the cost, and `grok-4-6` is now its
-   first fallback. **Watch item:** the first DeepSeek post cited only Microsoft domains. If the
-   "Further reading" lists keep collapsing onto one domain, set `VeniceBrainModel` back to `grok-4-6`
-   (revert `c156005`), whose posts drew on a wider mix of outlets.
+   NEWS vs. EVERGREEN mode. `grok-4-6` earned the job on that. `deepseek-v4-1-flash` held it for
+   three runs on 2026-09-24/25 at about a third of the cost, then went back to being the first
+   fallback: its posts cited only Microsoft domains, two of its passes returned empty, and one
+   reported a naming conflict that does not exist (GPT-5.6 Sol and GPT-6 Sol are two real models),
+   which the DeepSeek writer then printed.
 2. **Writer (`deepseek-v4-1-flash`)** — composes the post from the merged dossier with search off,
    with thinking disabled: left on, it spent the whole `VeniceMaxTokens` budget reasoning and
    returned no post. About $0.006 a post against `claude-sonnet-5`'s ~$0.10, which is now its first

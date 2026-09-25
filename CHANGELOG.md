@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-25 — research back on Grok 4.6
+- `VeniceBrainModel` is `grok-4-6` again, with `deepseek-v4-1-flash` as its first fallback. In three real runs DeepSeek research cited only Microsoft domains, returned an empty pass twice (Grok filled in), and flagged "GPT-5.6 Sol" vs "GPT-6 Sol" as a naming conflict when both are real models. The DeepSeek writer repeats what the dossier says, so research accuracy matters more now; Grok costs ~$0.13 more per post.
+
 ## 2026-09-25 — the blog is about AI, not only .NET
 - `TopicHint`, the research role, and the first research angle now cover new models and APIs, Azure AI Foundry, and AI developer tooling as stories on their own; .NET and Azure stay the readers' home stack. The old angles asked only about .NET/Azure/GitHub releases, so research never looked for the 2026-09-22 Opus 5.5 and GPT-6 Sol/Luna launches.
 - The writer may cover any platform's item, but still must never present a `[Python]`/`[JavaScript]`/`[Java]`/`[Go]`/`[Unclear]` item as a .NET change, and must name its platform.
