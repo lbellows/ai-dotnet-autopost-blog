@@ -130,13 +130,15 @@ Venice grounds requests with a provider-side web search toggled through `venice_
 with an agentic tool loop the model can call repeatedly. One request buys one retrieval pass, so
 the provider splits the work in two:
 
-1. **Brain (`grok-4-6`)** — runs one grounded research call per angle (vendor engineering blogs,
+1. **Brain (`deepseek-v4-1-flash`)** — runs one grounded research call per angle (vendor engineering blogs,
    official changelogs and release notes, GitHub releases, developer news coverage), which is how
    the "at least 4 distinct search attempts" requirement is honored on this provider. Each pass
    returns a factual brief that separates in-window findings from older context, and Venice's
-   citation payload supplies verbatim source URLs. `grok-4-6` was picked because it was the most
-   disciplined of the candidates tested about *dates* — correctly refusing to pass an older
-   release off as this week's news, which is the decision that drives NEWS vs. EVERGREEN mode.
+   citation payload supplies verbatim source URLs. The brain has to be disciplined about *dates* —
+   refusing to pass an older release off as this week's news, which is the decision that drives
+   NEWS vs. EVERGREEN mode. `grok-4-6` earned the job on that; `deepseek-v4-1-flash` matched it
+   (see the 2026-09-24 changelog entry) at about a third of the cost, and `grok-4-6` is now its
+   first fallback.
 2. **Writer (`claude-sonnet-5`)** — composes the post from the merged dossier with search off. It
    is the same model the direct Anthropic path uses, and is both stronger and cheaper than
    `claude-sonnet-4-6` on Venice's price list.
