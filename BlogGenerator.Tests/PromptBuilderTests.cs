@@ -208,9 +208,9 @@ public class PromptBuilderTests
 
     // One release list can mix languages (microsoft/agent-framework ships .NET and Python together), and a
     // Python-only breaking change once went out on this blog as a .NET one. Research tags each item's
-    // platform; the writer drops the other languages.
+    // platform; the writer may cover any of them but has to name which one it is.
     [Fact]
-    public void ResearchTagsPlatformsAndWriterDropsOtherLanguages()
+    public void ResearchTagsPlatformsAndWriterNeverRelabelsThemAsDotNet()
     {
         var settings = CreateSettings();
         var today = new DateOnly(2026, 9, 18);
@@ -219,7 +219,7 @@ public class PromptBuilderTests
 
         Assert.Contains("[Python]", PromptBuilder.ResearchSystemPrompt(settings, today, start));
         Assert.Contains("[Python]", PromptBuilder.FeedResearchSystemPrompt(settings, today, start));
-        Assert.Contains("never present one of them as a .NET change", PromptBuilder.WriterSystemPrompt(ctx, settings));
+        Assert.Contains("name the platform it is for", PromptBuilder.WriterSystemPrompt(ctx, settings));
     }
 
     // Telling only the writer to avoid a topic while the research stage keeps bringing back that

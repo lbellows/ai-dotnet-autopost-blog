@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-25 — the blog is about AI, not only .NET
+- `TopicHint`, the research role, and the first research angle now cover new models and APIs, Azure AI Foundry, and AI developer tooling as stories on their own; .NET and Azure stay the readers' home stack. The old angles asked only about .NET/Azure/GitHub releases, so research never looked for the 2026-09-22 Opus 5.5 and GPT-6 Sol/Luna launches.
+- The writer may cover any platform's item, but still must never present a `[Python]`/`[JavaScript]`/`[Java]`/`[Go]`/`[Unclear]` item as a .NET change, and must name its platform.
+- Evergreen mode may take a recent release the blog has not covered (a launch from last week) as its subject, stating its real date. "Do NOT reach for an older item" was read as "never write about it": a run with the launches in its dossier wrote about quantization instead.
+
 ## 2026-09-25 — DeepSeek 4.1 Flash as the Venice writer
 - `VeniceWriterModel` is `deepseek-v4-1-flash` (from `claude-sonnet-5`), with `claude-sonnet-5` first in `VeniceWriterFallbackModels`. Written against the 2026-09-25 research dossier: ~$0.0064 and ~20 s per post against Sonnet 5's ~$0.10 and ~32 s; every URL printed came from the dossier, no Python-tagged item crept in, and each post had the meme comment and a single-topic structure. One of four invented a first-person aside ("most .NET teams I've talked to").
 - The split writer call sends `disable_thinking`. With thinking on, DeepSeek used all 8192 `VeniceMaxTokens` reasoning and returned an empty post in 2 of 3 runs; with it off, 4 of 4 finished at 0 reasoning tokens. Research passes and the single-call mode are unchanged.

@@ -205,10 +205,10 @@ public static partial class PromptBuilder
             {ModeHeader}
             (A) NEWS MODE — only if you find a genuinely fresh lead story whose primary announcement falls inside the
             window. Lead with it and you may frame it as recent/this-week.
-            (B) EVERGREEN MODE — if nothing inside the window qualifies. Write a timeless, pragmatic piece for the same
-            audience on a still-relevant .NET/Azure/AI engineering topic. Do NOT reach for an older item (a release
-            from weeks or months ago) and dress it up as fresh, and do NOT use time-sensitive framing like "this week",
-            "the freshest development", or "just landed". Write it as evergreen guidance, not as news.
+            (B) EVERGREEN MODE — if nothing inside the window qualifies. Write a pragmatic piece for the same audience
+            on a still-relevant AI engineering topic. A recent release the blog has not covered yet (a model launch
+            from last week, say) is a fine subject: state its real date, and do NOT dress it up as fresh with
+            time-sensitive framing like "this week", "the freshest development", or "just landed".
 
             {coverageRule}
 
@@ -297,8 +297,9 @@ public static partial class PromptBuilder
 
         var angles = new List<string>
         {
-            $"Vendor engineering blogs: what did Microsoft, Azure, GitHub, OpenAI, or Anthropic announce {window} " +
-            $"that changes how developers build software? Topic focus: {settings.TopicHint}{preferred}",
+            $"Model and platform launches: which new models or APIs did OpenAI, Anthropic, Google, Microsoft " +
+            $"(including Azure AI Foundry), or GitHub release {window}? Include availability, pricing, context " +
+            $"limits, and what changes for developers. Topic focus: {settings.TopicHint}{preferred}",
 
             $"Official release notes and changelogs: which .NET, ASP.NET Core, Azure SDK, Azure AI Foundry, or " +
             $"GitHub Copilot releases shipped {window}? Include exact version numbers and release dates.{preferred}",
@@ -307,7 +308,7 @@ public static partial class PromptBuilder
             $"release {window}? Name the repository, the version, and what changed for consumers.",
 
             $"Developer news coverage and analysis: what are technology publications reporting {window} about AI " +
-            $"tooling that matters to engineers shipping on .NET and Azure? Include cost, latency, and API details.",
+            $"tooling that matters to software engineers? Include cost, latency, and API details.",
         };
 
         if (!string.IsNullOrEmpty(settings.TopicUrl))
@@ -362,8 +363,8 @@ public static partial class PromptBuilder
         IReadOnlyList<PublishedPost>? recentPosts = null)
     {
         return Tidy($"""
-            You are a research assistant for a technical blog written for software engineers shipping on .NET, Azure,
-            and AI platforms. Today is {today:yyyy-MM-dd}. The freshness window for news is
+            You are a research assistant for a technical blog about AI for software engineers. Its readers' home stack
+            is .NET and Azure, but a model launch or a Foundry change is a story on its own. Today is {today:yyyy-MM-dd}. The freshness window for news is
             {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
 
             You are given web search results. Produce a factual research brief in Markdown — notes only, never a
@@ -391,8 +392,8 @@ public static partial class PromptBuilder
         IReadOnlyList<PublishedPost>? recentPosts = null)
     {
         return Tidy($"""
-            You are a research assistant for a technical blog written for software engineers shipping on .NET, Azure,
-            and AI platforms. Today is {today:yyyy-MM-dd}. The freshness window for news is
+            You are a research assistant for a technical blog about AI for software engineers. Its readers' home stack
+            is .NET and Azure, but a model launch or a Foundry change is a story on its own. Today is {today:yyyy-MM-dd}. The freshness window for news is
             {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
 
             You have two tools, and they are your ONLY source of facts:
@@ -460,15 +461,16 @@ public static partial class PromptBuilder
             inside the window {ctx.RecentStartDate:yyyy-MM-dd} to {ctx.Today:yyyy-MM-dd}. Lead with it and you may
             frame it as recent/this-week.
             (B) EVERGREEN MODE — if the dossier's "In-window findings" section is empty or nothing in it qualifies.
-            Write a timeless, pragmatic piece for the same audience on a still-relevant .NET/Azure/AI engineering
-            topic. Do NOT reach for an older item from the dossier and dress it up as fresh, and do NOT use
-            time-sensitive framing like "this week", "the freshest development", or "just landed".
+            Write a pragmatic piece for the same audience on a still-relevant AI engineering topic. A recent release
+            from the dossier's context that the blog has not covered yet (a model launch from last week, say) is a
+            fine subject: state its real date, and do NOT dress it up as fresh with time-sensitive framing like
+            "this week", "the freshest development", or "just landed".
 
             {ctx.RecentCoverageRule}
 
-            The readers ship on .NET. Leave out dossier items tagged [Python], [JavaScript], [Java], or [Go], and
-            never present one of them as a .NET change. Use an [Unclear] item only as background, not as a .NET
-            claim.
+            The post does not have to be about .NET: a new model, an API change, or a Foundry feature is a story on
+            its own. But never present an item tagged [Python], [JavaScript], [Java], [Go], or [Unclear] as a .NET
+            change; name the platform it is for.
 
             {NeverBreakCharacterRule(fromDossier: true)}
             You have no search tool in this step: every URL you print must appear verbatim in the dossier. Never
