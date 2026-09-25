@@ -138,7 +138,9 @@ the provider splits the work in two:
    refusing to pass an older release off as this week's news, which is the decision that drives
    NEWS vs. EVERGREEN mode. `grok-4-6` earned the job on that; `deepseek-v4-1-flash` matched it
    (see the 2026-09-24 changelog entry) at about a third of the cost, and `grok-4-6` is now its
-   first fallback.
+   first fallback. **Watch item:** the first DeepSeek post cited only Microsoft domains. If the
+   "Further reading" lists keep collapsing onto one domain, set `VeniceBrainModel` back to `grok-4-6`
+   (revert `c156005`), whose posts drew on a wider mix of outlets.
 2. **Writer (`claude-sonnet-5`)** — composes the post from the merged dossier with search off. It
    is the same model the direct Anthropic path uses, and is both stronger and cheaper than
    `claude-sonnet-4-6` on Venice's price list.

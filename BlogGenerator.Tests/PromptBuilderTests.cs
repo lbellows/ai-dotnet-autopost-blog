@@ -206,6 +206,22 @@ public class PromptBuilderTests
         Assert.Contains("Your Agent's Token Bill Is a Context Problem", prompt);
     }
 
+    // One release list can mix languages (microsoft/agent-framework ships .NET and Python together), and a
+    // Python-only breaking change once went out on this blog as a .NET one. Research tags each item's
+    // platform; the writer drops the other languages.
+    [Fact]
+    public void ResearchTagsPlatformsAndWriterDropsOtherLanguages()
+    {
+        var settings = CreateSettings();
+        var today = new DateOnly(2026, 9, 18);
+        var start = today.AddDays(-settings.RecentWindowDays);
+        var ctx = PromptBuilder.Build(settings, today: today);
+
+        Assert.Contains("[Python]", PromptBuilder.ResearchSystemPrompt(settings, today, start));
+        Assert.Contains("[Python]", PromptBuilder.FeedResearchSystemPrompt(settings, today, start));
+        Assert.Contains("never present one of them as a .NET change", PromptBuilder.WriterSystemPrompt(ctx, settings));
+    }
+
     // Telling only the writer to avoid a topic while the research stage keeps bringing back that
     // topic produces a worse post, not a different one.
     [Fact]

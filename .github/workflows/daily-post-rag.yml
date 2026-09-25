@@ -81,9 +81,20 @@ jobs:
           IMGFLIP_USERNAME: ${{ secrets.IMGFLIP_USERNAME }}
           IMGFLIP_PASSWORD: ${{ secrets.IMGFLIP_PASSWORD }}
           PROVIDER: ${{ steps.provider.outputs.name }}
+          DOSSIER_DIR: ${{ runner.temp }}/dossier
         run: |
           dotnet --version | grep -q "^10\." || { echo "::error::.NET 10 not found on runner."; exit 1; }
           dotnet run --project BlogGenerator -- "$PROVIDER"
+
+      # The research the post was written from, for tracing a wrong claim to research or writer.
+      - name: Upload research dossier
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dossier
+          path: ${{ runner.temp }}/dossier/
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Commit & push if changed
         run: |

@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using BlogGenerator.Core.Configuration;
 using BlogGenerator.Core.Prompts;
+using BlogGenerator.Core.Research;
 
 namespace BlogGenerator.Core.Providers.Venice;
 
@@ -56,6 +57,10 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         }
 
         var research = await ResearchAsync(promptContext, settings, brainCandidates, apiKey, ct);
+
+        // Saved before the writer runs, so a failed or wrong post can still be checked against it.
+        var savedTo = await DossierArchive.SaveAsync(research.Dossier, promptContext.Today, ct);
+        Console.WriteLine($"Venice: dossier ({research.Dossier.Length:N0} chars) saved to {savedTo}");
 
         var written = await WriteAsync(
             writerCandidates,

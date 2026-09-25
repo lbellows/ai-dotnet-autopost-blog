@@ -161,9 +161,7 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
 
         // Saved so the post can be checked against it afterwards — "is every URL in the post in the
         // dossier?" is the review question, and it needs the dossier to still exist.
-        var savedTo = Path.Combine(
-            Path.GetTempPath(), $"blog-dossier-{promptContext.Today:yyyy-MM-dd}-{Guid.NewGuid():N}.md");
-        await File.WriteAllTextAsync(savedTo, dossier, ct);
+        var savedTo = await DossierArchive.SaveAsync(dossier, promptContext.Today, ct);
         Console.WriteLine($"Local: dossier ({dossier.Length:N0} chars) saved to {savedTo}");
 
         return dossier;

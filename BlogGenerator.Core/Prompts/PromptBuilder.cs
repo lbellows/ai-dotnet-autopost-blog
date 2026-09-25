@@ -332,6 +332,12 @@ public static partial class PromptBuilder
 
         ## Sources
         Every URL you actually used, one per line as a plain URL followed by a short title.
+
+        Start every finding and context item with the platform it belongs to, as the source states it: [.NET],
+        [Python], [JavaScript], [Java], [Go], or [Azure service] for a hosted service any language can call. Repos
+        like microsoft/agent-framework ship several languages from one release list, so tag each item on its own
+        rather than the list as a whole. If the source does not say which platform an item is for, tag it
+        [Unclear] — never assume .NET.
         """;
 
     // The research stages get the archive too, not just the writer. Telling only the writer to avoid
@@ -459,6 +465,10 @@ public static partial class PromptBuilder
             time-sensitive framing like "this week", "the freshest development", or "just landed".
 
             {ctx.RecentCoverageRule}
+
+            The readers ship on .NET. Leave out dossier items tagged [Python], [JavaScript], [Java], or [Go], and
+            never present one of them as a .NET change. Use an [Unclear] item only as background, not as a .NET
+            claim.
 
             {NeverBreakCharacterRule(fromDossier: true)}
             You have no search tool in this step: every URL you print must appear verbatim in the dossier. Never

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-25 — platform tags in research, and the dossier is kept
+- Research briefs tag every item with its platform (`[.NET]`, `[Python]`, `[JavaScript]`, `[Java]`, `[Go]`, `[Azure service]`, `[Unclear]`), and the writer leaves out other languages' items. A Python-only `SecretString` breaking change from `microsoft/agent-framework` (python-1.18.0) went out as a .NET change, because that repo's release list mixes both languages.
+- The dossier is saved as soon as research finishes (`DossierArchive`, directory from `DOSSIER_DIR`, else the temp dir), so a wrong claim can be traced to the research or the writer. The scheduled workflow uploads it as the `dossier` artifact, kept 30 days, even when the run fails.
+- Watch item: the first DeepSeek-researched post cited only Microsoft domains. If sources keep pinning to one domain, revert the brain to `grok-4-6`.
+
 ## 2026-09-24 — no tags from code samples
 - `TagInferrer` drops fenced code blocks before it looks at the post. A dotted identifier in a sample (`context.Response.StatusCode`) read as a versioned name and outranked the real topics, and a `#` comment line in a bash block counted as a heading.
 
