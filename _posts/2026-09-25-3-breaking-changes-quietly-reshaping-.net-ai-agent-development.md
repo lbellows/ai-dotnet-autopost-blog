@@ -10,11 +10,7 @@ If you build agents on .NET and treat your AI SDK dependencies like any other Nu
 
 ## The Tasks extension rewrite nobody announced loudly
 
-The `microsoft/agent-framework` repository shipped a breaking change migrating MCP long-running task support onto the Model Context Protocol's `2026-07-28` Tasks extension. If your .NET agents hand off work to MCP servers and expect to poll or resume a task the old way, that contract has moved. This matters more than it sounds: long-running tasks are exactly the pattern teams reach for when an agent kicks off a multi-minute retrieval, a batch evaluation, or a human-in-the-loop approval step. A silent protocol drift here doesn't fail loudly — it fails as a task that never resolves, or resolves against the wrong shape of response. Before upgrading past this change, re-test any code path that spans an agent invocation and a follow-up poll, not just the happy-path single-turn calls your unit tests probably cover.
-
-## SecretString just stopped being a string
-
-Also breaking, also in the same repository: `SecretString` is being converted from a `str` subclass into a masked-value wrapper type, and the change spans a wide surface — the anthropic, azure-ai-search, azure-cosmos, bedrock, copilotstudio, core, foundry, gemini, mem0, and openai packages all pick it up. The intent is sensible: stop credentials and API keys from leaking into logs, tracebacks, or `repr()` output just because someone treated a secret like an ordinary string. But "sensible" and "compatible" aren't the same thing. Any code that concatenates a `SecretString`, serializes it directly, or passes it somewhere expecting a plain string will now need an explicit unwrap. If your team has internal wrapper libraries around these provider SDKs, budget time to grep for every place a secret gets passed around implicitly — string interpolation is the usual offender.
+The .NET release of `microsoft/agent-framework` (`dotnet-1.19.0`, August 22) shipped a breaking change migrating MCP long-running task support onto the Model Context Protocol's `2026-07-28` Tasks extension. If your .NET agents hand off work to MCP servers and expect to poll or resume a task the old way, that contract has moved. This matters more than it sounds: long-running tasks are exactly the pattern teams reach for when an agent kicks off a multi-minute retrieval, a batch evaluation, or a human-in-the-loop approval step. A silent protocol drift here doesn't fail loudly — it fails as a task that never resolves, or resolves against the wrong shape of response. Before upgrading past this change, re-test any code path that spans an agent invocation and a follow-up poll, not just the happy-path single-turn calls your unit tests probably cover.
 
 ![3 Breaking Changes Quietly Reshaping .NET AI Agent Development meme](https://i.imgflip.com/b1yuum.jpg)
 
@@ -29,6 +25,8 @@ Separately, and not really an AI story at all, Microsoft is rotating the author-
 ## Practical takeaways
 
 None of these changes are catastrophic on their own, but they add up to a pattern: agent tooling on .NET is maturing fast enough that "breaking change" now shows up in minor-version release notes more often than teams expect. Treat agent-framework and Copilot SDK upgrades the way you'd treat an Azure SDK major bump — read the release notes, grep for the affected types, and run your multi-turn and long-running-task test paths specifically, not just unit tests. And if your CI trusts a specific NuGet signer thumbprint anywhere, put "verify against the new certificate" on this sprint's list, not next quarter's.
+
+*Correction, September 25, 2026: an earlier version of this post also covered a `SecretString` breaking change. That change shipped in the Python release of Agent Framework (`python-1.18.0`), not the .NET one, and has been removed.*
 
 ## Further reading
 
