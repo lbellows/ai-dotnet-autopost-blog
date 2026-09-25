@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-25 — DeepSeek 4.1 Flash as the Venice writer
+- `VeniceWriterModel` is `deepseek-v4-1-flash` (from `claude-sonnet-5`), with `claude-sonnet-5` first in `VeniceWriterFallbackModels`. Written against the 2026-09-25 research dossier: ~$0.0064 and ~20 s per post against Sonnet 5's ~$0.10 and ~32 s; every URL printed came from the dossier, no Python-tagged item crept in, and each post had the meme comment and a single-topic structure. One of four invented a first-person aside ("most .NET teams I've talked to").
+- The split writer call sends `disable_thinking`. With thinking on, DeepSeek used all 8192 `VeniceMaxTokens` reasoning and returned an empty post in 2 of 3 runs; with it off, 4 of 4 finished at 0 reasoning tokens. Research passes and the single-call mode are unchanged.
+
 ## 2026-09-25 — platform tags in research, and the dossier is kept
 - Research briefs tag every item with its platform (`[.NET]`, `[Python]`, `[JavaScript]`, `[Java]`, `[Go]`, `[Azure service]`, `[Unclear]`), and the writer leaves out other languages' items. A Python-only `SecretString` breaking change from `microsoft/agent-framework` (python-1.18.0) went out as a .NET change, because that repo's release list mixes both languages.
 - The dossier is saved as soon as research finishes (`DossierArchive`, directory from `DOSSIER_DIR`, else the temp dir), so a wrong claim can be traced to the research or the writer. The scheduled workflow uploads it as the `dossier` artifact, kept 30 days, even when the run fails.

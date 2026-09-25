@@ -53,6 +53,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
                 promptContext.SystemPrompt,
                 promptContext.UserPrompt,
                 webSearch: true,
+                disableThinking: false,
                 settings, apiKey, ct);
         }
 
@@ -67,6 +68,9 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             PromptBuilder.WriterSystemPrompt(promptContext, settings),
             PromptBuilder.WriterUserPrompt(promptContext, research.Dossier),
             webSearch: false,
+            // The research is already done, so the writer has nothing to reason about: left on,
+            // deepseek-v4-1-flash spent all of VeniceMaxTokens thinking and returned no post.
+            disableThinking: true,
             settings, apiKey, ct);
 
         // The post is the work of both halves, so both are reported: the research models ground it
@@ -87,6 +91,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         string systemPrompt,
         string userPrompt,
         bool webSearch,
+        bool disableThinking,
         GenerationSettings settings,
         string apiKey,
         CancellationToken ct)
@@ -98,6 +103,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             settings.VeniceTemperature,
             settings.VeniceTopP,
             webSearch,
+            disableThinking,
             apiKey,
             ct);
 
@@ -141,6 +147,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
                     settings.VeniceResearchTemperature,
                     settings.VeniceTopP,
                     webSearch: true,
+                    disableThinking: false,
                     apiKey,
                     ct);
 
@@ -213,6 +220,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         double? temperature,
         double? topP,
         bool webSearch,
+        bool disableThinking,
         string apiKey,
         CancellationToken ct)
     {
@@ -222,21 +230,25 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         {
             try
             {
+                var veniceParameters = new Dictionary<string, object>
+                {
+                    ["enable_web_search"] = webSearch ? "on" : "off",
+                    ["enable_web_citations"] = webSearch,
+                    // Venice prepends its own persona unless this is off, which would fight
+                    // the house style prompt.
+                    ["include_venice_system_prompt"] = false,
+                    // Reasoning models otherwise emit <think> blocks straight into the post.
+                    ["strip_thinking_response"] = true,
+                };
+                if (disableThinking)
+                    veniceParameters["disable_thinking"] = true;
+
                 var request = new Dictionary<string, object>
                 {
                     ["model"] = model,
                     ["messages"] = messages,
                     ["max_completion_tokens"] = maxTokens,
-                    ["venice_parameters"] = new Dictionary<string, object>
-                    {
-                        ["enable_web_search"] = webSearch ? "on" : "off",
-                        ["enable_web_citations"] = webSearch,
-                        // Venice prepends its own persona unless this is off, which would fight
-                        // the house style prompt.
-                        ["include_venice_system_prompt"] = false,
-                        // Reasoning models otherwise emit <think> blocks straight into the post.
-                        ["strip_thinking_response"] = true,
-                    },
+                    ["venice_parameters"] = veniceParameters,
                 };
 
                 if (temperature.HasValue)

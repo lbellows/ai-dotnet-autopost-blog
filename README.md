@@ -141,9 +141,11 @@ the provider splits the work in two:
    first fallback. **Watch item:** the first DeepSeek post cited only Microsoft domains. If the
    "Further reading" lists keep collapsing onto one domain, set `VeniceBrainModel` back to `grok-4-6`
    (revert `c156005`), whose posts drew on a wider mix of outlets.
-2. **Writer (`claude-sonnet-5`)** — composes the post from the merged dossier with search off. It
-   is the same model the direct Anthropic path uses, and is both stronger and cheaper than
-   `claude-sonnet-4-6` on Venice's price list.
+2. **Writer (`deepseek-v4-1-flash`)** — composes the post from the merged dossier with search off,
+   with thinking disabled: left on, it spent the whole `VeniceMaxTokens` budget reasoning and
+   returned no post. About $0.006 a post against `claude-sonnet-5`'s ~$0.10, which is now its first
+   fallback. If the prose slips (invented first-person asides, padded "Further reading" lists), set
+   `VeniceWriterModel` back to `claude-sonnet-5`.
 
 A failed research pass is logged and skipped rather than aborting the run; the remaining passes
 still ground the post. Venice models emit superscript citation markers (`^4^`, `^1,5,8^`) inline,
