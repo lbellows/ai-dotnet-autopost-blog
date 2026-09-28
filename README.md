@@ -101,7 +101,7 @@ dotnet test BlogGenerator.sln
 - `TopicUrl` — optional primary link to anchor the article around.
 - `DefaultAuthor` — default author name injected into front matter.
 - `AnthropicModel` — default Claude deployment slug.
-- `AnthropicMaxTokens` / `AnthropicTemperature` — Claude output cap (thinking + article; Sonnet 5 thinks by default) and temperature. Leave `AnthropicTemperature` null on Sonnet 5, which rejects non-default sampling parameters with a 400.
+- `AnthropicMaxTokens` / `AnthropicTemperature` — Claude output cap (thinking + article; Sonnet 5.5 thinks by default) and temperature. Leave `AnthropicTemperature` null on Sonnet 5.5, which rejects non-default sampling parameters with a 400.
 - `FoundryModels` — ordered list of Azure Foundry deployments the Responses path can try after the configured default deployment.
 - `FoundryDefaultModel`/`FoundryMaxTokens`/`FoundryTemperature`/`FoundryTopP` — generation parameters used by the Foundry path. `FoundryDefaultModel` is always tried first.
 - `VeniceBrainModel` / `VeniceBrainFallbackModels` — the research ("brain") model that runs the grounded web-search passes, plus ordered fallbacks tried when it errors.
@@ -118,7 +118,7 @@ dotnet test BlogGenerator.sln
 - `MemeGuidanceEnabled` — toggles whether prompts instruct the model to embed a meme image.
 - `CodeSamplesEnabled` — toggles whether the prompt asks for a code sample at all. Set to `false` and posts explain implementation details in prose.
 - `CodeSampleMinLines` / `CodeSampleMaxLines` — the size band requested for the single code sample (defaults `15`/`30`). These also set the threshold `CodeSampleLinter` warns against after generation.
-- Generated posts automatically add a model tag (e.g., `claude-sonnet-5`) so you can filter by source model.
+- Generated posts automatically add a model tag (e.g., `claude-sonnet-5-5`) so you can filter by source model.
 
 Azure Foundry generation now uses the Azure OpenAI-compatible Responses API with API-key auth. The Foundry path hits your configured `FOUNDRY_OPENAI_ENDPOINT`, tries the configured model list in order, and forces Azure web search via the preview Responses web-search tool. The prompt also biases source selection toward your configured `AllowedDomains` list.
 
@@ -143,9 +143,9 @@ the provider splits the work in two:
    which the DeepSeek writer then printed.
 2. **Writer (`deepseek-v4-1-flash`)** — composes the post from the merged dossier with search off,
    with thinking disabled: left on, it spent the whole `VeniceMaxTokens` budget reasoning and
-   returned no post. About $0.006 a post against `claude-sonnet-5`'s ~$0.10, which is now its first
-   fallback. If the prose slips (invented first-person asides, padded "Further reading" lists), set
-   `VeniceWriterModel` back to `claude-sonnet-5`.
+   returned no post. About $0.006 a post against Sonnet 5's ~$0.10; `claude-sonnet-5-5` (Venice prices it
+   25% above Sonnet 5) is now its first fallback. If the prose slips (invented first-person asides, padded "Further reading" lists), set
+   `VeniceWriterModel` back to `claude-sonnet-5-5`.
 
 A failed research pass is logged and skipped rather than aborting the run; the remaining passes
 still ground the post. Venice models emit superscript citation markers (`^4^`, `^1,5,8^`) inline,

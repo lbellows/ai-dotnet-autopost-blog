@@ -45,7 +45,7 @@ public sealed class AnthropicProvider(HttpClient httpClient) : IAIProvider
 
         var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
         var stopReason = json.TryGetProperty("stop_reason", out var sr) ? sr.GetString() : null;
-        // Sonnet 5 thinks by default and max_tokens caps thinking + article together, so a
+        // Sonnet 5.5 thinks by default and max_tokens caps thinking + article together, so a
         // truncated post is possible; never publish one.
         if (stopReason == "max_tokens")
             throw new InvalidOperationException(

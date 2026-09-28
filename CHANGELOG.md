@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-28 — Sonnet 5.5 replaces Sonnet 5
+- `AnthropicModel` and the Venice brain/writer fallbacks are `claude-sonnet-5-5` (from `claude-sonnet-5`). Same tokenizer, and the same $2/$10 per MTok on the direct API; Venice charges $3.75/$18.75 against Sonnet 5's $3/$15. The request sends no `thinking` or `tool_choice`, and those are the only fields whose rules changed, so it goes out unchanged.
+
 ## 2026-09-25 — research back on Grok 4.6
 - `VeniceBrainModel` is `grok-4-6` again, with `deepseek-v4-1-flash` as its first fallback. In three real runs DeepSeek research cited only Microsoft domains, returned an empty pass twice (Grok filled in), and flagged "GPT-5.6 Sol" vs "GPT-6 Sol" as a naming conflict when both are real models. The DeepSeek writer repeats what the dossier says, so research accuracy matters more now; Grok costs ~$0.13 more per post.
 
