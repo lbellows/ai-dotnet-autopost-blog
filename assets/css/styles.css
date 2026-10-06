@@ -2,13 +2,173 @@
    Primary color: green; wider centered layout; improved typography & cards
 */
 :root {
+    color-scheme: light;
     --green-600: #16a34a;
     --green-700: #15803d;
     --green-100: #ecfdf5;
     --muted: #6b7280;
     --bg: #fbfdfe;
+    --bg-end: #ffffff;
+    --text: #0f172a;
+    --text-strong: #052e16;
+    --text-soft: #374151;
+    --surface: #ffffff;
+    --surface-end: #fbffff;
+    --cover-bg: #f3f4f6;
     --card-border: rgba(22, 163, 74, 0.12);
+    --anchor-border: rgba(22, 163, 74, 0.25);
+    --on-accent: #ffffff;
+    --shadow-rest: rgba(15, 23, 42, 0.03);
+    --shadow-hover: rgba(16, 24, 40, 0.06);
+    --mark-bg: #fef08a;
+    /* Minima's own colors, restated as tokens so dark mode can swap them. */
+    --link: #2a7ae2;
+    --link-visited: #1756a9;
+    --rule: #e8e8e8;
+    --quote: #828282;
+    --code-bg: #eeeeff;
+    --table-text: #3f3f3f;
+    --table-head: #f0f0f0;
+    --table-stripe: #f7f7f7;
+    --hr: #c4c4c4;
+    --hl-comment: #999988;
+    --hl-string: #dd1144;
+    --hl-number: #009999;
+    --hl-func: #990000;
+    --hl-type: #445588;
+    --hl-builtin: #0086b3;
+    --hl-attr: #008080;
+    --hl-tag: #000080;
+    --hl-ns: #555555;
+    --hl-regex: #009926;
+    --hl-symbol: #990073;
+    --hl-del: #ffdddd;
+    --hl-ins: #ddffdd;
 }
+
+/* Dark mode. The inline script in `_includes/header.html` always sets
+   `data-theme` (from the saved choice, else the OS setting), so one selector
+   covers both cases. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --green-600: #22c55e;
+    --green-700: #4ade80;
+    --green-100: rgba(34, 197, 94, 0.14);
+    --muted: #94a3b8;
+    --bg: #0b1220;
+    --bg-end: #0f172a;
+    --text: #e2e8f0;
+    --text-strong: #dcfce7;
+    --text-soft: #cbd5e1;
+    --surface: #111b2e;
+    --surface-end: #0f1a2b;
+    --cover-bg: #1e293b;
+    --card-border: rgba(74, 222, 128, 0.16);
+    --anchor-border: rgba(74, 222, 128, 0.3);
+    --on-accent: #052e16;
+    --shadow-rest: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.45);
+    --mark-bg: rgba(250, 204, 21, 0.35);
+    --link: #60a5fa;
+    --link-visited: #a5b4fc;
+    --rule: #1f2a3d;
+    --quote: #94a3b8;
+    --code-bg: #0b1324;
+    --table-text: #cbd5e1;
+    --table-head: #16213a;
+    --table-stripe: #0f1a2d;
+    --hr: #2b3a52;
+    --hl-comment: #8b949e;
+    --hl-string: #a5d6ff;
+    --hl-number: #79c0ff;
+    --hl-func: #d2a8ff;
+    --hl-type: #ffa657;
+    --hl-builtin: #79c0ff;
+    --hl-attr: #7ee787;
+    --hl-tag: #7ee787;
+    --hl-ns: #c9d1d9;
+    --hl-regex: #7ee787;
+    --hl-symbol: #ff7b72;
+    --hl-del: rgba(248, 81, 73, 0.2);
+    --hl-ins: rgba(46, 160, 67, 0.2);
+}
+
+/* Minima (2.5.x, light only) hardcodes these; route them through the tokens. */
+a {
+    color: var(--link);
+}
+
+a:visited {
+    color: var(--link-visited);
+}
+
+a:hover {
+    color: var(--text);
+}
+
+blockquote {
+    color: var(--quote);
+    border-left-color: var(--rule);
+}
+
+pre,
+code,
+.highlighter-rouge .highlight {
+    background-color: var(--code-bg);
+    border-color: var(--rule);
+}
+
+.highlight {
+    background: var(--code-bg);
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--hr);
+}
+
+table {
+    color: var(--table-text);
+    border-color: var(--rule);
+}
+
+table tr:nth-child(even) {
+    background-color: var(--table-stripe);
+}
+
+table th {
+    background-color: var(--table-head);
+    border-color: var(--rule);
+}
+
+table td {
+    border-color: var(--rule);
+}
+
+.site-header,
+.site-footer {
+    border-bottom-color: var(--rule);
+}
+
+.site-footer {
+    border-top-color: var(--rule);
+}
+
+.highlight .c, .highlight .cm, .highlight .c1, .highlight .cs,
+.highlight .cp, .highlight .gh, .highlight .bp, .highlight .w { color: var(--hl-comment); }
+.highlight .s, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .s2, .highlight .se,
+.highlight .sh, .highlight .si, .highlight .sx, .highlight .s1 { color: var(--hl-string); }
+.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .mo, .highlight .il { color: var(--hl-number); }
+.highlight .nf, .highlight .ne, .highlight .gr, .highlight .gt { color: var(--hl-func); }
+.highlight .kt, .highlight .nc { color: var(--hl-type); }
+.highlight .nb { color: var(--hl-builtin); }
+.highlight .na, .highlight .no, .highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi { color: var(--hl-attr); }
+.highlight .nt, .highlight .ni { color: var(--hl-tag); }
+.highlight .nn, .highlight .gp, .highlight .go { color: var(--hl-ns); }
+.highlight .sr { color: var(--hl-regex); }
+.highlight .ss { color: var(--hl-symbol); }
+.highlight .gd, .highlight .gd .x { color: inherit; background-color: var(--hl-del); }
+.highlight .gi, .highlight .gi .x { color: inherit; background-color: var(--hl-ins); }
 
 /* Base */
 html,
@@ -19,8 +179,10 @@ body {
 body {
     margin: 0;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-    background: linear-gradient(180deg, var(--bg), #ffffff);
-    color: #0f172a;
+    /* no-repeat + a fill color: the gradient tile is one viewport tall, and
+       repeating it left a visible seam on long pages in dark mode. */
+    background: linear-gradient(180deg, var(--bg), var(--bg-end)) no-repeat var(--bg-end);
+    color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
@@ -47,14 +209,14 @@ body {
     border: 1px solid var(--card-border);
     border-radius: 12px;
     overflow: hidden;
-    background: linear-gradient(180deg, #ffffff, #fbffff);
+    background: linear-gradient(180deg, var(--surface), var(--surface-end));
     transition: transform 180ms ease, box-shadow 180ms ease;
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+    box-shadow: 0 1px 0 var(--shadow-rest);
 }
 
 .post-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+    box-shadow: 0 10px 30px var(--shadow-hover);
 }
 
 .post-card a {
@@ -67,7 +229,7 @@ body {
     width: 100%;
     height: 200px;
     object-fit: cover;
-    background: #f3f4f6;
+    background: var(--cover-bg);
 }
 
 .post-body {
@@ -95,7 +257,7 @@ body {
 }
 
 .post-title a {
-    color: #0f172a;
+    color: var(--text);
     font-weight: 700;
 }
 
@@ -127,7 +289,7 @@ body {
 }
 
 .post-excerpt {
-    color: #374151;
+    color: var(--text-soft);
     margin: .5rem 0 1rem;
 }
 
@@ -157,12 +319,12 @@ a.tag {
 a.tag:hover,
 a.tag:focus-visible {
     background: var(--green-600);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 a.tag.tag-current {
     background: var(--green-600);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 /* Tags page */
@@ -214,7 +376,7 @@ a.tag.tag-current {
 }
 
 .tag-more {
-    background: #fff;
+    background: var(--surface);
     border: 1.5px solid var(--card-border);
     color: var(--green-700);
     font-weight: 600;
@@ -387,7 +549,7 @@ a:focus {
 .site-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #052e16;
+    color: var(--text-strong);
 }
 
 .site-sub {
@@ -413,21 +575,25 @@ a:focus {
     }
 }
 
-/* Header search */
+/* Header search + theme toggle share one row */
 .header-search-wrap {
     max-width: 1100px;
     margin: 0.75rem auto 0;
     padding: 0 0.5rem;
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    align-items: center;
 }
 
 .header-search-form {
     display: flex;
-    max-width: 520px;
-    margin: 0 auto;
+    flex: 0 1 520px;
+    min-width: 0;
     border: 1.5px solid var(--card-border);
     border-radius: 999px;
     overflow: hidden;
-    background: #fff;
+    background: var(--surface);
     transition: border-color 150ms;
 }
 
@@ -442,7 +608,7 @@ a:focus {
     padding: 0.45rem 1rem;
     font-size: 0.9rem;
     background: transparent;
-    color: #0f172a;
+    color: var(--text);
     min-width: 0;
 }
 
@@ -464,6 +630,42 @@ a:focus {
     color: var(--green-700);
 }
 
+/* Theme toggle: shows the moon in light mode, the sun in dark mode */
+.theme-toggle {
+    flex: 0 0 auto;
+    width: 2.2rem;
+    height: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--card-border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--green-700);
+    cursor: pointer;
+    padding: 0;
+    transition: border-color 150ms, background 150ms;
+}
+
+.theme-toggle:hover {
+    background: var(--green-100);
+    border-color: var(--green-600);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid rgba(22, 163, 74, 0.35);
+    outline-offset: 2px;
+}
+
+.theme-toggle .icon-sun,
+:root[data-theme="dark"] .theme-toggle .icon-moon {
+    display: none;
+}
+
+:root[data-theme="dark"] .theme-toggle .icon-sun {
+    display: block;
+}
+
 /* Search page */
 .search-page {
     max-width: 1100px;
@@ -476,7 +678,7 @@ a:focus {
     border: 1.5px solid var(--card-border);
     border-radius: 999px;
     overflow: hidden;
-    background: #fff;
+    background: var(--surface);
     margin-bottom: 1rem;
     transition: border-color 150ms;
 }
@@ -492,7 +694,7 @@ a:focus {
     padding: 0.65rem 1.25rem;
     font-size: 1rem;
     background: transparent;
-    color: #0f172a;
+    color: var(--text);
     min-width: 0;
 }
 
@@ -522,7 +724,7 @@ a:focus {
 }
 
 mark {
-    background: #fef08a;
+    background: var(--mark-bg);
     color: inherit;
     border-radius: 2px;
     padding: 0 1px;
@@ -551,7 +753,7 @@ mark {
     line-height: 1;
     vertical-align: .35em;
     cursor: pointer;
-    border: 1.5px solid rgba(22, 163, 74, 0.25);
+    border: 1.5px solid var(--anchor-border);
     border-radius: 5px;
     padding: .25em .45em;
     letter-spacing: .02em;
@@ -564,6 +766,6 @@ mark {
 }
 .h2-anchor:hover {
     background: var(--green-600);
-    color: #fff;
+    color: var(--on-accent);
     border-color: var(--green-600);
 }

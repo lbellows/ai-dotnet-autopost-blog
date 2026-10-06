@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-06 — dark mode toggle
+- A sun/moon button next to the header search switches the site between light and dark. A saved choice (`localStorage`) wins; without one the site follows the OS setting, live. The script runs at the top of `_includes/header.html` so a dark page does not flash light first.
+- Colors are tokens on `:root` with a `[data-theme="dark"]` set in `styles.css`. Minima 2.5 is light-only, so its link, blockquote, code, table, footer and Rouge syntax colors are restated as tokens there too; light mode looks the same as before.
+- The body gradient no longer repeats every viewport height, which drew a seam on long pages in dark mode.
+
 ## 2026-09-28 — Sonnet 5.5 replaces Sonnet 5
 - `AnthropicModel` and the Venice brain/writer fallbacks are `claude-sonnet-5-5` (from `claude-sonnet-5`). Same tokenizer, and the same $2/$10 per MTok on the direct API; Venice charges $3.75/$18.75 against Sonnet 5's $3/$15. The request sends no `thinking` or `tool_choice`, and those are the only fields whose rules changed, so it goes out unchanged.
 
