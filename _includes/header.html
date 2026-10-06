@@ -29,7 +29,8 @@
     });
   })();
 </script>
-<link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
+{%- comment -%} The build-time query string busts the Pages CDN, which kept serving the previous styles.css after a deploy. {%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 <link rel="icon" href="{{ '/favicon.ico' | relative_url }}" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/favicon-32.png' | relative_url }}">
 <link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/images/favicon-16.png' | relative_url }}">
