@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-07 — Foundry retired, one Venice path, shared chat-completions code
+- The Azure Foundry provider is gone, with the `OpenAI` package, its five `Foundry*` settings, its two secrets and its workflow branch. It last published in August. `docs/retired-foundry-provider.md` records what it did, and commit `d30a966` still has the code.
+- Venice always researches, then writes. The "empty `VeniceWriterModel` means one search-and-write call" mode is removed, and `VeniceWriterModel` is now required.
+- Venice and the local provider build and parse chat completions through one `ChatCompletions` helper. Each adds only its own fields (`venice_parameters`, or tools). The requests they send are unchanged apart from JSON key order.
+- The `claude` and `azure` provider aliases are removed. Use `anthropic`, `venice` or `local`.
+
 ## 2026-10-06 — dark mode toggle
 - A sun/moon button next to the header search switches the site between light and dark. A saved choice (`localStorage`) wins; without one the site follows the OS setting, live. The script runs at the top of `_includes/header.html` so a dark page does not flash light first.
 - Colors are tokens on `:root` with a `[data-theme="dark"]` set in `styles.css`. Minima 2.5 is light-only, so its link, blockquote, code, table, footer and Rouge syntax colors are restated as tokens there too; light mode looks the same as before.

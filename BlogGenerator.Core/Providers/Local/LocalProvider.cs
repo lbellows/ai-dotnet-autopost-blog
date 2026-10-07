@@ -1,4 +1,3 @@
-using System.Text.Json;
 using BlogGenerator.Core.Configuration;
 using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Research;
@@ -59,8 +58,8 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
         var completion = await CompleteAsync(
             endpoint, apiKey, model,
             [
-                ProviderSupport.ChatMessage("system", PromptBuilder.WriterSystemPrompt(promptContext, settings)),
-                ProviderSupport.ChatMessage("user", PromptBuilder.WriterUserPrompt(promptContext, dossier)),
+                ChatCompletions.Message("system", PromptBuilder.WriterSystemPrompt(promptContext, settings)),
+                ChatCompletions.Message("user", PromptBuilder.WriterUserPrompt(promptContext, dossier)),
             ],
             tools: null,
             maxTokens: settings.LocalMaxTokens,
@@ -166,7 +165,7 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
         return dossier;
     }
 
-    private async Task<LocalCompletion> CompleteAsync(
+    private async Task<ChatCompletion> CompleteAsync(
         Uri endpoint,
         string? apiKey,
         string model,
@@ -178,32 +177,16 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
         GenerationSettings settings,
         CancellationToken ct)
     {
-        var request = new Dictionary<string, object>
-        {
-            ["model"] = model,
-            ["messages"] = messages,
-            ["max_tokens"] = maxTokens,
-            ["stream"] = false,
-        };
-
+        var request = ChatCompletions.Request(model, messages, temperature, topP);
+        request["max_tokens"] = maxTokens;
+        request["stream"] = false;
         if (tools is { Count: > 0 })
             request["tools"] = tools;
-        if (temperature.HasValue)
-            request["temperature"] = temperature.Value;
-        if (topP.HasValue)
-            request["top_p"] = topP.Value;
 
-        string responseBody;
+        ChatCompletion completion;
         try
         {
-            responseBody = await ProviderSupport.PostJsonAsync(
-                httpClient, endpoint.ToString(), request, ProviderSupport.ChatJsonOptions, "Local",
-                httpRequest =>
-                {
-                    if (!string.IsNullOrEmpty(apiKey))
-                        httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
-                },
-                ct);
+            completion = await ChatCompletions.PostAsync(httpClient, endpoint.ToString(), apiKey, request, "Local", ct);
         }
         catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
         {
@@ -216,7 +199,7 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
                 "Generation:LocalTimeoutMinutes in appsettings.json.", ex);
         }
 
-        return ParseCompletion(responseBody, model);
+        return WithUsableModelName(completion, model);
     }
 
     /// <summary>
@@ -271,65 +254,13 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
         return new Uri(baseUri, $"{path}/{suffix}");
     }
 
-    internal static LocalCompletion ParseCompletion(string responseBody, string requestedModel)
-    {
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, ProviderSupport.ChatJsonOptions);
+    internal static ChatCompletion ParseCompletion(string responseBody, string requestedModel) =>
+        WithUsableModelName(ChatCompletions.Parse(responseBody, requestedModel), requestedModel);
 
-        var content = "";
-        var finishReason = "";
-        IReadOnlyList<ChatToolCall> toolCalls = [];
-        if (json.TryGetProperty("choices", out var choices) &&
-            choices.ValueKind == JsonValueKind.Array &&
-            choices.GetArrayLength() > 0)
-        {
-            var choice = choices[0];
-            if (choice.TryGetProperty("message", out var message))
-            {
-                content = ProviderSupport.ReadString(message, "content");
-                toolCalls = ReadToolCalls(message);
-            }
-            finishReason = ProviderSupport.ReadString(choice, "finish_reason");
-        }
-
-        // llama-swap answers with the alias that was requested, but a plain llama.cpp server
-        // reports the GGUF path it loaded, which would make a useless tag.
-        var responseModel = ProviderSupport.ReadString(json, "model");
-        var model = responseModel.Length == 0 || responseModel.Contains('/') || responseModel.Contains('\\')
-            ? requestedModel
-            : responseModel;
-
-        return new LocalCompletion(content, model, finishReason, toolCalls);
-    }
-
-    private static IReadOnlyList<ChatToolCall> ReadToolCalls(JsonElement message)
-    {
-        if (!message.TryGetProperty("tool_calls", out var calls) || calls.ValueKind != JsonValueKind.Array)
-            return [];
-
-        var parsed = new List<ChatToolCall>();
-        foreach (var call in calls.EnumerateArray())
-        {
-            if (!call.TryGetProperty("function", out var function))
-                continue;
-
-            var name = ProviderSupport.ReadString(function, "name");
-            if (name.Length == 0)
-                continue;
-
-            // Arguments are a JSON *string* in the OpenAI shape, but some servers inline the object.
-            var arguments = function.TryGetProperty("arguments", out var value)
-                ? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.GetRawText()
-                : "";
-
-            parsed.Add(new ChatToolCall(ProviderSupport.ReadString(call, "id"), name, arguments));
-        }
-
-        return parsed;
-    }
+    // llama-swap answers with the alias that was requested, but a plain llama.cpp server
+    // reports the GGUF path it loaded, which would make a useless tag.
+    private static ChatCompletion WithUsableModelName(ChatCompletion completion, string requestedModel) =>
+        completion.Model.Contains('/') || completion.Model.Contains('\\')
+            ? completion with { Model = requestedModel }
+            : completion;
 }
-
-internal sealed record LocalCompletion(
-    string Content,
-    string Model,
-    string FinishReason,
-    IReadOnlyList<ChatToolCall> ToolCalls);

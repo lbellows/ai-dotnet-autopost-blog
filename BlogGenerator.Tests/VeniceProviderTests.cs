@@ -1,6 +1,7 @@
 using BlogGenerator.Core.Configuration;
 using Microsoft.Extensions.Configuration;
 using BlogGenerator.Core.Prompts;
+using BlogGenerator.Core.Providers;
 using BlogGenerator.Core.Providers.Venice;
 
 namespace BlogGenerator.Tests;
@@ -17,8 +18,6 @@ public class VeniceProviderTests
         DefaultAuthor = "the.serf",
         AnthropicModel = "claude-sonnet-4-6",
         AnthropicMaxTokens = 4096,
-        FoundryDefaultModel = "gpt-5.4-mini",
-        FoundryMaxTokens = 4096,
         AllowedDomains = ["devblogs.microsoft.com", "github.blog"],
         VeniceBrainModel = "grok-4-6",
         VeniceBrainFallbackModels = ["claude-sonnet-5"],
@@ -88,11 +87,11 @@ public class VeniceProviderTests
             }
             """;
 
-        var completion = VeniceProvider.ParseCompletion(body, requestedModel: "requested");
+        var completion = ChatCompletions.Parse(body, requestedModel: "requested");
 
         Assert.Equal("brief text", completion.Content);
         Assert.Equal("grok-4-6", completion.Model);
-        var citation = Assert.Single(completion.Citations);
+        var citation = Assert.Single(VeniceProvider.ReadCitations(completion.Json));
         Assert.Equal("https://devblogs.microsoft.com/dotnet/x/", citation.Url);
         Assert.Equal("2026-08-26", citation.Date);
         Assert.Equal("Today we announce the release.", citation.Snippet);
@@ -103,10 +102,10 @@ public class VeniceProviderTests
     {
         const string body = """{ "choices": [{ "message": { "content": "text" } }] }""";
 
-        var completion = VeniceProvider.ParseCompletion(body, requestedModel: "claude-sonnet-5");
+        var completion = ChatCompletions.Parse(body, requestedModel: "claude-sonnet-5");
 
         Assert.Equal("claude-sonnet-5", completion.Model);
-        Assert.Empty(completion.Citations);
+        Assert.Empty(VeniceProvider.ReadCitations(completion.Json));
     }
 
     [Fact]

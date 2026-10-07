@@ -5,7 +5,6 @@ using BlogGenerator.Core.PostGeneration;
 using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Providers;
 using BlogGenerator.Core.Providers.Anthropic;
-using BlogGenerator.Core.Providers.AzureFoundry;
 using BlogGenerator.Core.Providers.Local;
 using BlogGenerator.Core.Providers.Venice;
 using BlogGenerator.Core.Research;
@@ -42,7 +41,6 @@ settings.ResearchDisabled = args.Any(arg => arg.Equals("--no-research", StringCo
 var services = new ServiceCollection();
 services.AddSingleton(settings);
 services.AddHttpClient<AnthropicProvider>();
-services.AddSingleton<AzureFoundryProvider>();
 services.AddHttpClient<VeniceProvider>(client => client.Timeout = TimeSpan.FromMinutes(5));
 services.AddHttpClient<LocalProvider>(client =>
     client.Timeout = TimeSpan.FromMinutes(settings.LocalTimeoutMinutes));
@@ -69,12 +67,11 @@ var providerName = args.Length > 0 && !args[0].StartsWith('-')
 
 IAIProvider aiProvider = providerName.ToLowerInvariant() switch
 {
-    "anthropic" or "claude" => provider.GetRequiredService<AnthropicProvider>(),
-    "foundry" or "azure" => provider.GetRequiredService<AzureFoundryProvider>(),
+    "anthropic" => provider.GetRequiredService<AnthropicProvider>(),
     "venice" => provider.GetRequiredService<VeniceProvider>(),
     "local" => provider.GetRequiredService<LocalProvider>(),
     _ => throw new ArgumentException(
-        $"Unknown AI provider: {providerName}. Use 'anthropic', 'foundry', 'venice', or 'local'."),
+        $"Unknown AI provider: {providerName}. Use 'anthropic', 'venice', or 'local'."),
 };
 
 Console.WriteLine($"Using provider: {aiProvider.ProviderName}");

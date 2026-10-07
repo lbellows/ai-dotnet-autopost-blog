@@ -20,7 +20,7 @@ public class ProviderSupportTests
     }
 
     [Fact]
-    public void ModelCandidatesKeepsFoundryDefaultAhead()
+    public void ModelCandidatesKeepsPrimaryAhead()
     {
         var candidates = ProviderSupport.ModelCandidates("gpt-5.4-mini", ["gpt-5.4-mini", "gpt-5-mini"]);
 
@@ -31,13 +31,13 @@ public class ProviderSupportTests
     public void RedactReplacesSecretsWithPlaceholders()
     {
         var message = ProviderSupport.Redact(
-            "call to https://example.openai.azure.com/ with key sk-abc123 failed",
-            ("https://example.openai.azure.com/", "FOUNDRY_OPENAI_ENDPOINT"),
-            ("sk-abc123", "FOUNDRY_PROJECT_API_KEY"));
+            "call to http://main:8080/ with key sk-abc123 failed",
+            ("http://main:8080/", "LOCAL_AI_BASE_URL"),
+            ("sk-abc123", "VENICE_API_KEY"));
 
         Assert.DoesNotContain("sk-abc123", message);
-        Assert.DoesNotContain("example.openai.azure.com", message);
-        Assert.Contains("[FOUNDRY_PROJECT_API_KEY]", message);
+        Assert.DoesNotContain("main:8080", message);
+        Assert.Contains("[VENICE_API_KEY]", message);
     }
 
     [Fact]

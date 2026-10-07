@@ -15,9 +15,6 @@ public class GenerationSettingsTests
         AnthropicModel = "claude-sonnet-4-6",
         AnthropicMaxTokens = 4096,
         AnthropicTemperature = 0.9,
-        FoundryModels = ["gpt-5.4-mini", "gpt-5-mini"],
-        FoundryDefaultModel = "gpt-5.4-mini",
-        FoundryMaxTokens = 4096,
     };
 
     [Fact]
@@ -28,8 +25,8 @@ public class GenerationSettingsTests
         settings.AllowedDomains.Add(" Learn.Microsoft.com ");
         settings.BlockedDomains.Add(" example.com ");
         settings.BlockedDomains.Add("EXAMPLE.COM");
-        settings.FoundryModels.Add("gpt-5-mini");
-        settings.FoundryModels.Add(" gpt-5-mini ");
+        settings.VeniceBrainFallbackModels.Add("gpt-5-mini");
+        settings.VeniceBrainFallbackModels.Add(" gpt-5-mini ");
 
         settings.Normalize();
 
@@ -40,8 +37,8 @@ public class GenerationSettingsTests
         Assert.Single(settings.BlockedDomains);
         Assert.Equal("example.com", settings.BlockedDomains[0]);
         Assert.Equal(
-            settings.FoundryModels.Count,
-            settings.FoundryModels.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            settings.VeniceBrainFallbackModels.Count,
+            settings.VeniceBrainFallbackModels.Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 
     [Fact]
@@ -103,6 +100,7 @@ public class GenerationSettingsTests
     {
         var settings = CreateSettings();
         settings.VeniceBrainModel = "grok-4-6";
+        settings.VeniceWriterModel = "deepseek-v4-1-flash";
         settings.VeniceResearchMaxTokens = 6000;
         settings.VeniceMaxTokens = 8192;
         settings.LocalMaxTokens = 8192;

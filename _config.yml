@@ -130,6 +130,7 @@ exclude:
   - BlogGenerator.Core
   - BlogGenerator.Tests
   - BlogGenerator.sln
+  - docs
   - .github
   - .devcontainer
   - .vscode

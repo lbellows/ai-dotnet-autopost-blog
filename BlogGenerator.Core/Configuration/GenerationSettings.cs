@@ -26,16 +26,9 @@ public sealed class GenerationSettings
     public int AnthropicMaxTokens { get; set; }
     public double? AnthropicTemperature { get; set; }
 
-    // Azure Foundry
-    public List<string> FoundryModels { get; set; } = [];
-    public string FoundryDefaultModel { get; set; } = string.Empty;
-    public int FoundryMaxTokens { get; set; }
-    public double? FoundryTemperature { get; set; }
-    public double? FoundryTopP { get; set; }
-
     // Venice (OpenAI-compatible chat completions with provider-side web search).
     // The brain model researches with web search on; the writer model turns that dossier
-    // into the post with search off. Leave VeniceWriterModel empty to run a single call.
+    // into the post with search off.
     public string VeniceBrainModel { get; set; } = string.Empty;
     public List<string> VeniceBrainFallbackModels { get; set; } = [];
     public string VeniceWriterModel { get; set; } = string.Empty;
@@ -97,7 +90,6 @@ public sealed class GenerationSettings
         // Domains are compared and sent lower-cased; model names keep the casing the API expects.
         AllowedDomains = Clean(AllowedDomains, lowercase: true);
         BlockedDomains = Clean(BlockedDomains, lowercase: true);
-        FoundryModels = Clean(FoundryModels);
         VeniceBrainFallbackModels = Clean(VeniceBrainFallbackModels);
         VeniceWriterFallbackModels = Clean(VeniceWriterFallbackModels);
 
@@ -128,11 +120,8 @@ public sealed class GenerationSettings
         Require(!string.IsNullOrWhiteSpace(DefaultAuthor), "DefaultAuthor must be set");
         Require(!string.IsNullOrWhiteSpace(AnthropicModel), "AnthropicModel must be set");
         Require(AnthropicMaxTokens > 0, "AnthropicMaxTokens must be greater than 0");
-        Require(FoundryMaxTokens > 0, "FoundryMaxTokens must be greater than 0");
-        Require(
-            FoundryModels.Count > 0 || !string.IsNullOrWhiteSpace(FoundryDefaultModel),
-            "FoundryModels or Generation:FoundryDefaultModel must be set");
         Require(!string.IsNullOrWhiteSpace(VeniceBrainModel), "VeniceBrainModel must be set");
+        Require(!string.IsNullOrWhiteSpace(VeniceWriterModel), "VeniceWriterModel must be set");
         Require(VeniceResearchMaxTokens > 0, "VeniceResearchMaxTokens must be greater than 0");
         Require(VeniceMaxTokens > 0, "VeniceMaxTokens must be greater than 0");
         Require(LocalMaxTokens > 0, "LocalMaxTokens must be greater than 0");

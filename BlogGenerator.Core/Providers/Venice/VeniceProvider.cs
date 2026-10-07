@@ -15,8 +15,7 @@ namespace BlogGenerator.Core.Providers.Venice;
 /// Because that search is a single retrieval pass rather than an agentic loop, this provider
 /// splits generation in two: a "brain" model runs one grounded research call per angle
 /// (see <see cref="PromptBuilder.ResearchAngles"/>) and a "writer" model composes the post
-/// from the merged dossier with search off. Clearing <c>VeniceWriterModel</c> collapses this
-/// back to a single search-and-write call.
+/// from the merged dossier with search off.
 /// </summary>
 public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
 {
@@ -40,69 +39,22 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         var writerCandidates = ProviderSupport.ModelCandidates(
             settings.VeniceWriterModel, settings.VeniceWriterFallbackModels);
 
-        if (brainCandidates.Count == 0)
-            throw new InvalidOperationException("Generation:VeniceBrainModel must name at least one Venice model.");
-
-        // No writer configured: one grounded call both searches and writes.
-        if (writerCandidates.Count == 0)
-        {
-            Console.WriteLine("Venice: no writer model configured; running a single search-and-write call.");
-            return await WriteAsync(
-                brainCandidates,
-                promptContext.SystemPrompt,
-                promptContext.UserPrompt,
-                webSearch: true,
-                disableThinking: false,
-                settings, apiKey, ct);
-        }
-
         var research = await ResearchAsync(promptContext, settings, brainCandidates, apiKey, ct);
 
         // Saved before the writer runs, so a failed or wrong post can still be checked against it.
         var savedTo = await DossierArchive.SaveAsync(research.Dossier, promptContext.Today, ct);
         Console.WriteLine($"Venice: dossier ({research.Dossier.Length:N0} chars) saved to {savedTo}");
 
-        var written = await WriteAsync(
-            writerCandidates,
-            PromptBuilder.WriterSystemPrompt(promptContext, settings),
-            PromptBuilder.WriterUserPrompt(promptContext, research.Dossier),
-            webSearch: false,
-            // The research is already done, so the writer has nothing to reason about: left on,
-            // deepseek-v4-1-flash spent all of VeniceMaxTokens thinking and returned no post.
-            disableThinking: true,
-            settings, apiKey, ct);
-
-        // The post is the work of both halves, so both are reported: the research models ground it
-        // and the writer composes it, and each earns a tag on the published post.
-        var usedModels = research.Models
-            .Concat(written.UsedModels)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        Console.WriteLine(
-            $"Venice: wrote post with {string.Join(", ", written.UsedModels)}; " +
-            $"research by {string.Join(", ", research.Models)}.");
-        return written with { UsedModels = usedModels };
-    }
-
-    private async Task<AIProviderResponse> WriteAsync(
-        IReadOnlyList<string> candidates,
-        string systemPrompt,
-        string userPrompt,
-        bool webSearch,
-        bool disableThinking,
-        GenerationSettings settings,
-        string apiKey,
-        CancellationToken ct)
-    {
         var completion = await CompleteAsync(
-            candidates,
-            [ProviderSupport.ChatMessage("system", systemPrompt), ProviderSupport.ChatMessage("user", userPrompt)],
+            writerCandidates,
+            [
+                ChatCompletions.Message("system", PromptBuilder.WriterSystemPrompt(promptContext, settings)),
+                ChatCompletions.Message("user", PromptBuilder.WriterUserPrompt(promptContext, research.Dossier)),
+            ],
             settings.VeniceMaxTokens,
             settings.VeniceTemperature,
             settings.VeniceTopP,
-            webSearch,
-            disableThinking,
+            research: false,
             apiKey,
             ct);
 
@@ -110,7 +62,16 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         if (string.IsNullOrWhiteSpace(markdown))
             throw new InvalidOperationException($"Venice model {completion.Model} returned no article text.");
 
-        return new AIProviderResponse(markdown, completion.Model);
+        // The post is the work of both halves, so both are reported: the research models ground it
+        // and the writer composes it, and each earns a tag on the published post.
+        var usedModels = research.Models
+            .Append(completion.Model)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Console.WriteLine(
+            $"Venice: wrote post with {completion.Model}; research by {string.Join(", ", research.Models)}.");
+        return new AIProviderResponse(markdown, usedModels);
     }
 
     private async Task<(string Dossier, IReadOnlyList<string> Models)> ResearchAsync(
@@ -141,12 +102,11 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             {
                 var result = await CompleteAsync(
                     brainCandidates,
-                    [ProviderSupport.ChatMessage("system", researchSystem), ProviderSupport.ChatMessage("user", angles[i])],
+                    [ChatCompletions.Message("system", researchSystem), ChatCompletions.Message("user", angles[i])],
                     settings.VeniceResearchMaxTokens,
                     settings.VeniceResearchTemperature,
                     settings.VeniceTopP,
-                    webSearch: true,
-                    disableThinking: false,
+                    research: true,
                     apiKey,
                     ct);
 
@@ -160,7 +120,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
                         models.Add(result.Model);
                 }
 
-                foreach (var citation in result.Citations)
+                foreach (var citation in ReadCitations(result.Json))
                 {
                     if (!string.IsNullOrWhiteSpace(citation.Url) && seenUrls.Add(citation.Url))
                         citations.Add(citation);
@@ -212,14 +172,19 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         return sb.ToString().TrimEnd();
     }
 
-    private async Task<VeniceCompletion> CompleteAsync(
+    /// <summary>
+    /// One chat completion, trying each model in turn. A <paramref name="research"/> call searches
+    /// the web and may think; a writing call does neither, because the research is already done:
+    /// with thinking left on, deepseek-v4-1-flash spent all of VeniceMaxTokens reasoning and
+    /// returned no post.
+    /// </summary>
+    private async Task<ChatCompletion> CompleteAsync(
         IReadOnlyList<string> modelCandidates,
-        List<Dictionary<string, object>> messages,
+        IReadOnlyList<object> messages,
         int maxTokens,
         double? temperature,
         double? topP,
-        bool webSearch,
-        bool disableThinking,
+        bool research,
         string apiKey,
         CancellationToken ct)
     {
@@ -231,36 +196,22 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             {
                 var veniceParameters = new Dictionary<string, object>
                 {
-                    ["enable_web_search"] = webSearch ? "on" : "off",
-                    ["enable_web_citations"] = webSearch,
+                    ["enable_web_search"] = research ? "on" : "off",
+                    ["enable_web_citations"] = research,
                     // Venice prepends its own persona unless this is off, which would fight
                     // the house style prompt.
                     ["include_venice_system_prompt"] = false,
                     // Reasoning models otherwise emit <think> blocks straight into the post.
                     ["strip_thinking_response"] = true,
                 };
-                if (disableThinking)
+                if (!research)
                     veniceParameters["disable_thinking"] = true;
 
-                var request = new Dictionary<string, object>
-                {
-                    ["model"] = model,
-                    ["messages"] = messages,
-                    ["max_completion_tokens"] = maxTokens,
-                    ["venice_parameters"] = veniceParameters,
-                };
+                var request = ChatCompletions.Request(model, messages, temperature, topP);
+                request["max_completion_tokens"] = maxTokens;
+                request["venice_parameters"] = veniceParameters;
 
-                if (temperature.HasValue)
-                    request["temperature"] = temperature.Value;
-                if (topP.HasValue)
-                    request["top_p"] = topP.Value;
-
-                var responseBody = await ProviderSupport.PostJsonAsync(
-                    httpClient, ApiUrl, request, ProviderSupport.ChatJsonOptions, "Venice",
-                    httpRequest => httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}"),
-                    ct);
-
-                var completion = ParseCompletion(responseBody, model);
+                var completion = await ChatCompletions.PostAsync(httpClient, ApiUrl, apiKey, request, "Venice", ct);
                 if (string.IsNullOrWhiteSpace(completion.Content))
                     throw new InvalidOperationException($"Venice model {model} returned empty content.");
 
@@ -278,44 +229,33 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             $"Last error: {Redact(lastErr?.Message ?? "unknown", apiKey)}");
     }
 
-    internal static VeniceCompletion ParseCompletion(string responseBody, string requestedModel)
+    /// <summary>The sources Venice's web search returned, which it reports beside the reply.</summary>
+    internal static IReadOnlyList<VeniceCitation> ReadCitations(JsonElement json)
     {
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, ProviderSupport.ChatJsonOptions);
-
-        var content = "";
-        if (json.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
-        {
-            var message = choices[0].GetProperty("message");
-            if (message.TryGetProperty("content", out var contentProp) && contentProp.ValueKind == JsonValueKind.String)
-                content = contentProp.GetString() ?? "";
-        }
-
         var citations = new List<VeniceCitation>();
-        if (json.TryGetProperty("venice_parameters", out var veniceParams) &&
-            veniceParams.TryGetProperty("web_search_citations", out var citationArray) &&
-            citationArray.ValueKind == JsonValueKind.Array)
+        if (!json.TryGetProperty("venice_parameters", out var veniceParams) ||
+            !veniceParams.TryGetProperty("web_search_citations", out var citationArray) ||
+            citationArray.ValueKind != JsonValueKind.Array)
         {
-            foreach (var entry in citationArray.EnumerateArray())
-            {
-                var url = ProviderSupport.ReadString(entry, "url");
-                if (string.IsNullOrWhiteSpace(url))
-                    continue;
-
-                citations.Add(new VeniceCitation(
-                    Url: url,
-                    Title: ProviderSupport.ReadString(entry, "title"),
-                    Date: ProviderSupport.ReadString(entry, "date"),
-                    Snippet: Truncate(
-                        HtmlText.ToPlainText(ProviderSupport.ReadString(entry, "content")).ReplaceLineEndings(" "),
-                        CitationSnippetLength)));
-            }
+            return citations;
         }
 
-        var responseModel = ProviderSupport.ReadString(json, "model");
-        return new VeniceCompletion(
-            content,
-            string.IsNullOrEmpty(responseModel) ? requestedModel : responseModel,
-            citations);
+        foreach (var entry in citationArray.EnumerateArray())
+        {
+            var url = ChatCompletions.ReadString(entry, "url");
+            if (string.IsNullOrWhiteSpace(url))
+                continue;
+
+            citations.Add(new VeniceCitation(
+                Url: url,
+                Title: ChatCompletions.ReadString(entry, "title"),
+                Date: ChatCompletions.ReadString(entry, "date"),
+                Snippet: Truncate(
+                    HtmlText.ToPlainText(ChatCompletions.ReadString(entry, "content")).ReplaceLineEndings(" "),
+                    CitationSnippetLength)));
+        }
+
+        return citations;
     }
 
     /// <summary>
@@ -348,7 +288,5 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
     [GeneratedRegex(@"[ \t]*\^\s*\d+(?:\s*,\s*\d+)*\s*\^")]
     private static partial Regex CitationMarkerRegex();
 }
-
-internal sealed record VeniceCompletion(string Content, string Model, IReadOnlyList<VeniceCitation> Citations);
 
 internal sealed record VeniceCitation(string Url, string Title, string Date, string Snippet);
