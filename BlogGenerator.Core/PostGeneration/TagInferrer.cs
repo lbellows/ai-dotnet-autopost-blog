@@ -25,7 +25,7 @@ public static partial class TagInferrer
         "below", "between", "beyond", "both", "bring", "brings", "but", "can", "cant",
         "could", "did", "does", "doing", "done", "down", "during", "each", "even", "ever",
         "every", "few", "get", "gets", "getting", "goes", "going", "gone", "got", "had",
-        "has", "her", "here", "hers", "him", "his", "how", "into", "isnt", "just", "least",
+        "has", "her", "here", "hers", "him", "his", "how", "isnt", "just", "least",
         "less", "let", "lets", "like", "made", "make", "makes", "making", "many", "may",
         "might", "more", "most", "much", "must", "near", "never", "not", "now", "off",
         "often", "once", "one", "only", "onto", "other", "others", "ought", "our", "ours",
@@ -174,7 +174,7 @@ public static partial class TagInferrer
             if (string.IsNullOrEmpty(tag))
                 continue;
 
-            tag = MultiDashRegex().Replace(NonTagCharRegex().Replace(tag, "-"), "-").Trim('-');
+            tag = ToTagChars(tag);
             if (tag.Length > 0 && !normalized.Contains(tag))
                 normalized.Add(tag);
         }
@@ -196,12 +196,6 @@ public static partial class TagInferrer
         return counts;
     }
 
-    /// <summary>
-    /// Tokens from body prose that look like names rather than vocabulary: capitalized somewhere
-    /// other than the start of a sentence (Azure, Copilot, MCP), or carrying a digit, dot, or
-    /// hyphen (.net, gpt-5, 2026). Headings are skipped because Title Case makes every word look
-    /// like a proper noun.
-    /// </summary>
     // "github.blog" and "learn.microsoft.com" are sources, not subjects. A leading dot means
     // the token is a platform name (".net"), not a host, so those are left alone.
     internal static bool LooksLikeDomain(string token)
@@ -213,6 +207,12 @@ public static partial class TagInferrer
         return DomainSuffixes.Contains(lastLabel);
     }
 
+    /// <summary>
+    /// Tokens from body prose that look like names rather than vocabulary: capitalized somewhere
+    /// other than the start of a sentence (Azure, Copilot, MCP), or carrying a digit, dot, or
+    /// hyphen (.net, gpt-5, 2026). Headings are skipped because Title Case makes every word look
+    /// like a proper noun.
+    /// </summary>
     internal static HashSet<string> CollectSalientTokens(string markdownBody)
     {
         var salient = new HashSet<string>(StringComparer.Ordinal);
@@ -299,8 +299,10 @@ public static partial class TagInferrer
             return "";
         if (!HasLowerRegex().IsMatch(token))
             return "";
-        token = NonTagCharRegex().Replace(token, "-");
-        token = MultiDashRegex().Replace(token, "-").Trim('-');
-        return token;
+        return ToTagChars(token);
     }
+
+    // Anything that is not a word character, "+", "-", or "." becomes a single hyphen.
+    private static string ToTagChars(string tag) =>
+        MultiDashRegex().Replace(NonTagCharRegex().Replace(tag, "-"), "-").Trim('-');
 }

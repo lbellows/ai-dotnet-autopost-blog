@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BlogGenerator.Core.Providers;
 
@@ -10,6 +11,12 @@ namespace BlogGenerator.Core.Providers;
 /// </summary>
 internal static class ProviderSupport
 {
+    /// <summary>Serializer options for the OpenAI-shaped chat-completions APIs.</summary>
+    public static readonly JsonSerializerOptions ChatJsonOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     /// <summary>
     /// Returns the first non-empty environment variable among <paramref name="names"/>, or throws
     /// with <paramref name="errorMessage"/> when none is set.
@@ -86,4 +93,13 @@ internal static class ProviderSupport
 
         return responseBody;
     }
+
+    public static Dictionary<string, object> ChatMessage(string role, string content) =>
+        new() { ["role"] = role, ["content"] = content };
+
+    /// <summary>The string value of <paramref name="property"/>, or empty when absent or not a string.</summary>
+    public static string ReadString(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? ""
+            : "";
 }

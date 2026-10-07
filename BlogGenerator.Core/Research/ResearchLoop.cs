@@ -118,11 +118,7 @@ public static class ResearchLoop
     /// rather than an empty string.
     /// </summary>
     internal static string CallId(ChatToolCall call) =>
-        call.Id.Length == 9 && call.Id.All(char.IsLetterOrDigit)
-            ? call.Id
-            : call.Id.Length > 0
-                ? call.Id
-                : GenerateCallId();
+        call.Id.Length > 0 ? call.Id : GenerateCallId();
 
     private static string GenerateCallId() =>
         string.Concat(Enumerable.Range(0, 9).Select(_ => Alphabet[Random.Shared.Next(Alphabet.Length)]));

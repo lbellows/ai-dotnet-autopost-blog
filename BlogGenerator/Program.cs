@@ -93,7 +93,7 @@ var imgflipClient = settings.ImgflipMemeEnabled
     ? provider.GetRequiredService<ImgflipClient>()
     : null;
 
-var (postPath, memeRelPath) = PostWriter.WritePost(
+var (postPath, memeRelPath) = await PostWriter.WritePostAsync(
     response.Markdown,
     settings,
     usedModels: response.UsedModels,

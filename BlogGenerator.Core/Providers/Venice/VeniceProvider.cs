@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using BlogGenerator.Core.Configuration;
 using BlogGenerator.Core.Prompts;
@@ -98,7 +97,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
     {
         var completion = await CompleteAsync(
             candidates,
-            [ChatMessage("system", systemPrompt), ChatMessage("user", userPrompt)],
+            [ProviderSupport.ChatMessage("system", systemPrompt), ProviderSupport.ChatMessage("user", userPrompt)],
             settings.VeniceMaxTokens,
             settings.VeniceTemperature,
             settings.VeniceTopP,
@@ -142,7 +141,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
             {
                 var result = await CompleteAsync(
                     brainCandidates,
-                    [ChatMessage("system", researchSystem), ChatMessage("user", angles[i])],
+                    [ProviderSupport.ChatMessage("system", researchSystem), ProviderSupport.ChatMessage("user", angles[i])],
                     settings.VeniceResearchMaxTokens,
                     settings.VeniceResearchTemperature,
                     settings.VeniceTopP,
@@ -257,7 +256,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
                     request["top_p"] = topP.Value;
 
                 var responseBody = await ProviderSupport.PostJsonAsync(
-                    httpClient, ApiUrl, request, JsonOpts, "Venice",
+                    httpClient, ApiUrl, request, ProviderSupport.ChatJsonOptions, "Venice",
                     httpRequest => httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}"),
                     ct);
 
@@ -281,7 +280,7 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
 
     internal static VeniceCompletion ParseCompletion(string responseBody, string requestedModel)
     {
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, ProviderSupport.ChatJsonOptions);
 
         var content = "";
         if (json.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
@@ -298,19 +297,21 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
         {
             foreach (var entry in citationArray.EnumerateArray())
             {
-                var url = ReadString(entry, "url");
+                var url = ProviderSupport.ReadString(entry, "url");
                 if (string.IsNullOrWhiteSpace(url))
                     continue;
 
                 citations.Add(new VeniceCitation(
                     Url: url,
-                    Title: ReadString(entry, "title"),
-                    Date: ReadString(entry, "date"),
-                    Snippet: Truncate(StripHtml(ReadString(entry, "content")), CitationSnippetLength)));
+                    Title: ProviderSupport.ReadString(entry, "title"),
+                    Date: ProviderSupport.ReadString(entry, "date"),
+                    Snippet: Truncate(
+                        HtmlText.ToPlainText(ProviderSupport.ReadString(entry, "content")).ReplaceLineEndings(" "),
+                        CitationSnippetLength)));
             }
         }
 
-        var responseModel = ReadString(json, "model");
+        var responseModel = ProviderSupport.ReadString(json, "model");
         return new VeniceCompletion(
             content,
             string.IsNullOrEmpty(responseModel) ? requestedModel : responseModel,
@@ -339,17 +340,6 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
     private static string Redact(string message, string apiKey) =>
         ProviderSupport.Redact(message, (apiKey, "VENICE_API_KEY"));
 
-    private static Dictionary<string, object> ChatMessage(string role, string content) =>
-        new() { ["role"] = role, ["content"] = content };
-
-    private static string ReadString(JsonElement element, string property) =>
-        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? ""
-            : "";
-
-    private static string StripHtml(string value) =>
-        HtmlTagRegex().Replace(value, "").Replace("\n", " ").Trim();
-
     private static string Truncate(string value, int length) =>
         value.Length <= length ? value : value[..length].TrimEnd() + "…";
 
@@ -357,14 +347,6 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
     // citation does not leave a double space behind.
     [GeneratedRegex(@"[ \t]*\^\s*\d+(?:\s*,\s*\d+)*\s*\^")]
     private static partial Regex CitationMarkerRegex();
-
-    [GeneratedRegex(@"<[^>]+>")]
-    private static partial Regex HtmlTagRegex();
-
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
 }
 
 internal sealed record VeniceCompletion(string Content, string Model, IReadOnlyList<VeniceCitation> Citations);

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using BlogGenerator.Core.Configuration;
 using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Research;
@@ -60,8 +59,8 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
         var completion = await CompleteAsync(
             endpoint, apiKey, model,
             [
-                ChatMessage("system", PromptBuilder.WriterSystemPrompt(promptContext, settings)),
-                ChatMessage("user", PromptBuilder.WriterUserPrompt(promptContext, dossier)),
+                ProviderSupport.ChatMessage("system", PromptBuilder.WriterSystemPrompt(promptContext, settings)),
+                ProviderSupport.ChatMessage("user", PromptBuilder.WriterUserPrompt(promptContext, dossier)),
             ],
             tools: null,
             maxTokens: settings.LocalMaxTokens,
@@ -198,7 +197,7 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
         try
         {
             responseBody = await ProviderSupport.PostJsonAsync(
-                httpClient, endpoint.ToString(), request, JsonOpts, "Local",
+                httpClient, endpoint.ToString(), request, ProviderSupport.ChatJsonOptions, "Local",
                 httpRequest =>
                 {
                     if (!string.IsNullOrEmpty(apiKey))
@@ -274,7 +273,7 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
 
     internal static LocalCompletion ParseCompletion(string responseBody, string requestedModel)
     {
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, JsonOpts);
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody, ProviderSupport.ChatJsonOptions);
 
         var content = "";
         var finishReason = "";
@@ -286,15 +285,15 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
             var choice = choices[0];
             if (choice.TryGetProperty("message", out var message))
             {
-                content = ReadString(message, "content");
+                content = ProviderSupport.ReadString(message, "content");
                 toolCalls = ReadToolCalls(message);
             }
-            finishReason = ReadString(choice, "finish_reason");
+            finishReason = ProviderSupport.ReadString(choice, "finish_reason");
         }
 
         // llama-swap answers with the alias that was requested, but a plain llama.cpp server
         // reports the GGUF path it loaded, which would make a useless tag.
-        var responseModel = ReadString(json, "model");
+        var responseModel = ProviderSupport.ReadString(json, "model");
         var model = responseModel.Length == 0 || responseModel.Contains('/') || responseModel.Contains('\\')
             ? requestedModel
             : responseModel;
@@ -313,7 +312,7 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
             if (!call.TryGetProperty("function", out var function))
                 continue;
 
-            var name = ReadString(function, "name");
+            var name = ProviderSupport.ReadString(function, "name");
             if (name.Length == 0)
                 continue;
 
@@ -322,24 +321,11 @@ public sealed class LocalProvider(HttpClient httpClient, FeedResearchTools resea
                 ? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.GetRawText()
                 : "";
 
-            parsed.Add(new ChatToolCall(ReadString(call, "id"), name, arguments));
+            parsed.Add(new ChatToolCall(ProviderSupport.ReadString(call, "id"), name, arguments));
         }
 
         return parsed;
     }
-
-    private static Dictionary<string, object> ChatMessage(string role, string content) =>
-        new() { ["role"] = role, ["content"] = content };
-
-    private static string ReadString(JsonElement element, string property) =>
-        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? ""
-            : "";
-
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
 }
 
 internal sealed record LocalCompletion(

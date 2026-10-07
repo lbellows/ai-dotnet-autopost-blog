@@ -104,7 +104,7 @@ public class PostWriterTests
     }
 
     [Fact]
-    public void FrontMatterTagsEveryModelThatContributed()
+    public async Task FrontMatterTagsEveryModelThatContributed()
     {
         var repoRoot = Directory.CreateTempSubdirectory("blog-post-writer").FullName;
         try
@@ -116,7 +116,7 @@ public class PostWriterTests
                 ImgflipMemeEnabled = false,
             };
 
-            var (postPath, _) = PostWriter.WritePost(
+            var (postPath, _) = await PostWriter.WritePostAsync(
                 "# Azure Ships An Agent Gateway\n\nAzure shipped it, and Copilot picked it up. AI everywhere.",
                 settings,
                 usedModels: ["grok-4-6", "claude-sonnet-5"]);

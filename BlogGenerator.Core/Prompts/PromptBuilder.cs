@@ -356,6 +356,13 @@ public static partial class PromptBuilder
                "passes looking somewhere the list does not already go.";
     }
 
+    // Who every research stage is and what window it works to, whichever tools it has.
+    private static string ResearchRole(DateOnly today, DateOnly recentStartDate) =>
+        "You are a research assistant for a technical blog about AI for software engineers. Its readers' home stack\n" +
+        "is .NET and Azure, but a model launch or a Foundry change is a story on its own. " +
+        $"Today is {today:yyyy-MM-dd}. The freshness window for news is\n" +
+        $"{recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.";
+
     public static string ResearchSystemPrompt(
         GenerationSettings settings,
         DateOnly today,
@@ -363,9 +370,7 @@ public static partial class PromptBuilder
         IReadOnlyList<PublishedPost>? recentPosts = null)
     {
         return Tidy($"""
-            You are a research assistant for a technical blog about AI for software engineers. Its readers' home stack
-            is .NET and Azure, but a model launch or a Foundry change is a story on its own. Today is {today:yyyy-MM-dd}. The freshness window for news is
-            {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
+            {ResearchRole(today, recentStartDate)}
 
             You are given web search results. Produce a factual research brief in Markdown — notes only, never a
             finished article — with these sections:
@@ -392,9 +397,7 @@ public static partial class PromptBuilder
         IReadOnlyList<PublishedPost>? recentPosts = null)
     {
         return Tidy($"""
-            You are a research assistant for a technical blog about AI for software engineers. Its readers' home stack
-            is .NET and Azure, but a model launch or a Foundry change is a story on its own. Today is {today:yyyy-MM-dd}. The freshness window for news is
-            {recentStartDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.
+            {ResearchRole(today, recentStartDate)}
 
             You have two tools, and they are your ONLY source of facts:
             - list_recent_posts — what the publishers we trust have posted, already sorted into in-window and older.

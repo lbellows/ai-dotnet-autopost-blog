@@ -19,12 +19,13 @@ public static partial class PostWriter
     // delimiter. Jekyll tolerates it, but it makes the raw files awkward to diff and grep.
     private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
-    public static (string FilePath, string? MemeRelPath) WritePost(
+    public static async Task<(string FilePath, string? MemeRelPath)> WritePostAsync(
         string markdownBody,
         GenerationSettings settings,
         IReadOnlyList<string>? usedModels = null,
         ImgflipClient? imgflipClient = null,
-        IReadOnlyList<string>? extraTags = null)
+        IReadOnlyList<string>? extraTags = null,
+        CancellationToken ct = default)
     {
         markdownBody = StripLeadingInstructions(markdownBody);
         markdownBody = NormalizeBrokenBullets(markdownBody);
@@ -51,7 +52,7 @@ public static partial class PostWriter
             var hint = MemeExtractor.ExtractImgflipHint(markdownBody);
             if (hint is not null)
             {
-                var memeUrl = GenerateImgflipMemeAsync(imgflipClient, hint).GetAwaiter().GetResult();
+                var memeUrl = await GenerateImgflipMemeAsync(imgflipClient, hint, ct);
                 if (memeUrl is not null)
                 {
                     memeRelPath = memeUrl;
@@ -69,7 +70,6 @@ public static partial class PostWriter
             }
         }
 
-
         foreach (var warning in CodeSampleLinter.Inspect(markdownBody, settings))
             Console.WriteLine($"Code sample: {warning}");
 
@@ -85,7 +85,7 @@ public static partial class PostWriter
 
         var sb = new StringBuilder();
         sb.AppendLine("---");
-        sb.AppendLine($"layout: post");
+        sb.AppendLine("layout: post");
         sb.AppendLine($"title: \"{EscapeYamlString(title)}\"");
         sb.AppendLine($"date: {publishDt:yyyy-MM-dd HH:mm:ss} {offsetStr}");
         sb.AppendLine($"tags: [{string.Join(", ", mergedTags)}]");
@@ -94,7 +94,7 @@ public static partial class PostWriter
         sb.AppendLine();
         sb.Append(markdownBody);
 
-        File.WriteAllText(postPath, sb.ToString(), Utf8NoBom);
+        await File.WriteAllTextAsync(postPath, sb.ToString(), Utf8NoBom, ct);
         Console.WriteLine($"Wrote {postPath}");
 
         return (postPath, memeRelPath);
@@ -201,12 +201,13 @@ public static partial class PostWriter
         return string.Join("\n", lines);
     }
 
-    private static async Task<string?> GenerateImgflipMemeAsync(ImgflipClient client, ImgflipHint hint)
+    private static async Task<string?> GenerateImgflipMemeAsync(
+        ImgflipClient client, ImgflipHint hint, CancellationToken ct)
     {
         try
         {
-            var templates = await client.GetTemplatesAsync();
-            return await client.CaptionAsync(hint, templates);
+            var templates = await client.GetTemplatesAsync(ct);
+            return await client.CaptionAsync(hint, templates, ct);
         }
         catch (Exception ex)
         {
@@ -215,8 +216,6 @@ public static partial class PostWriter
         }
     }
 
-    private static string EscapeYamlString(string value)
-    {
-        return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
-    }
+    private static string EscapeYamlString(string value) =>
+        value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 }
