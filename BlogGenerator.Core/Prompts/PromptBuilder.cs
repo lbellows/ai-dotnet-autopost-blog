@@ -237,7 +237,7 @@ public static partial class PromptBuilder
     {
         if (today.DayOfWeek == DayOfWeek.Sunday)
             return "Sunday is synopsis day: weave the freshest breaking stories into a cohesive weekly roundup " +
-                   "that also previews what's next (e.g., 2025 readiness tips, roadmap considerations).";
+                   "that also previews what's next (e.g., readiness tips, roadmap considerations).";
 
         return $"NEWS MODE: pick one laser-focused story whose primary announcement happened within the last {recentWindowDays} day(s) " +
                "and dive deep into its implications. The hook must be genuinely from that window — do NOT present a release from " +
