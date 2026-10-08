@@ -6,7 +6,6 @@ Trying out some github pages features
 link: https://lbellows.github.io/blog/
 
 [Contributor guide →](AGENTS.md)
-[Changelog →](CHANGELOG.md)
 
 # About AI blog posting
 
@@ -14,11 +13,11 @@ I needed an easy solution for this because I was holding my daughter, so not too
 
 * git workflows
 * executes C# (.NET 10) generator
-* calls claude API with search tool enabled (or Venice.ai / a self-hosted model as alternate providers)
+* researches with Venice.ai's web search, then writes from that research (the Anthropic API or a self-hosted model are alternate providers)
 * writes the blog post in MD & commits
 * triggers jekyll build which updates the blog
 
-That is my AI-slop-posting pipeline.  Costs about $0.20 per post (sonnet 4.5). Haiku brings it down to about $0.07. This is mostly exploratory and I hope to test out some other tools/solutions in the future integration with social media.
+That is my AI-slop-posting pipeline. The scheduled Venice run costs about $0.20 per post, almost all of it the Grok research passes; the writer is under a cent. This is mostly exploratory and I hope to test out some other tools/solutions in the future integration with social media.
 
 ## Quick start — clone the repo
 
@@ -80,16 +79,16 @@ dotnet test BlogGenerator.sln
 
 ## Content defaults (adjust in `appsettings.json`)
 
-`BlogGenerator/appsettings.json` is the only non-secret configuration source. `GenerationSettings.cs` now only defines the typed shape plus validation; it does not carry fallback model or content defaults.
+`BlogGenerator/appsettings.json` is the only non-secret configuration source. `GenerationSettings.cs` only defines the typed shape plus validation; it does not carry fallback model or content defaults.
 
 - `TopicHint` — short instruction describing audience/angle (example: "AI + .NET + Azure + GitHub + LLM"). It sets the scope of the research angles, so a topic missing from it is a topic research will not look for.
-- `MaxSearches` — maximum number of web-search calls the model may perform (integer).
+- `MaxSearches` — caps web searches: Anthropic's `max_uses` on its search tool, and the number of research passes Venice runs (one per angle in `PromptBuilder.ResearchAngles`, which has four).
 - `AllowedDomains` — domains to bias results toward (optional). Defaults include Microsoft/GitHub properties plus tech press (`learn.microsoft.com`, `azure.microsoft.com`, `techcommunity.microsoft.com`, `blogs.microsoft.com`, `devblogs.microsoft.com`, `developer.microsoft.com`, `github.blog`, `techcrunch.com`, `venturebeat.com`, `infoq.com`).
 - `BlockedDomains` — domains to avoid (optional).
 - `PostWordsMin` — minimum desired words in the generated post.
 - `PostWordsMax` — maximum desired words in the generated post.
-- `RecentWindowDays` — how many days back the web search should look when hunting for breaking news (defaults to `2`).
-- `RecentPostHistoryCount` — how many already-published posts from `_posts/` the research and writing prompts are shown so a run does not repeat the last one (defaults to `12`; `0` disables it).
+- `RecentWindowDays` — how many days back research looks when hunting for breaking news (currently `2`).
+- `RecentPostHistoryCount` — how many already-published posts from `_posts/` the research and writing prompts are shown so a run does not repeat the last one (currently `12`; `0` disables it).
 - `TopicUrl` — optional primary link to anchor the article around.
 - `DefaultAuthor` — default author name injected into front matter.
 - `AnthropicModel` — default Claude deployment slug.
@@ -105,10 +104,9 @@ dotnet test BlogGenerator.sln
 - `ResearchFeeds` — the `Name`/`Url` list of publisher feeds the local research pass reads. This is its entire research surface: no search API, no key, no crawling.
 - `ResearchFeedItemsPerSource` — per-feed cap on items handed to the model. Some publishers serve their whole archive.
 - `ResearchPageMaxChars` — cap on the text of one fetched article, so a long page cannot crowd out the rest of the run.
-- `MemeGuidanceEnabled` — toggles whether prompts instruct the model to embed a meme image.
+- `ImgflipMemeEnabled` — toggles whether prompts ask the model for a meme and the post writer renders it through imgflip.
 - `CodeSamplesEnabled` — toggles whether the prompt asks for a code sample at all. Set to `false` and posts explain implementation details in prose.
-- `CodeSampleMinLines` / `CodeSampleMaxLines` — the size band requested for the single code sample (defaults `15`/`30`). These also set the threshold `CodeSampleLinter` warns against after generation.
-- Generated posts automatically add a model tag (e.g., `claude-sonnet-5-5`) so you can filter by source model.
+- `CodeSampleMinLines` / `CodeSampleMaxLines` — the size band requested for the single code sample (currently `15`/`30`). These also set the threshold `CodeSampleLinter` warns against after generation.
 
 The Azure Foundry provider was retired on 2026-10-07; [docs/retired-foundry-provider.md](docs/retired-foundry-provider.md) describes what it did and how to bring it back.
 
@@ -124,16 +122,12 @@ the provider splits the work in two:
    returns a factual brief that separates in-window findings from older context, and Venice's
    citation payload supplies verbatim source URLs. The brain has to be disciplined about *dates* —
    refusing to pass an older release off as this week's news, which is the decision that drives
-   NEWS vs. EVERGREEN mode. `grok-4-6` earned the job on that. `deepseek-v4-1-flash` held it for
-   three runs on 2026-09-24/25 at about a third of the cost, then went back to being the first
-   fallback: its posts cited only Microsoft domains, two of its passes returned empty, and one
-   reported a naming conflict that does not exist (GPT-5.6 Sol and GPT-6 Sol are two real models),
-   which the DeepSeek writer then printed.
+   NEWS vs. EVERGREEN mode. Cheaper brains were tried and lost on accuracy; see commit `37877c0`.
 2. **Writer (`deepseek-v4-1-flash`)** — composes the post from the merged dossier with search off,
    with thinking disabled: left on, it spent the whole `VeniceMaxTokens` budget reasoning and
-   returned no post. About $0.006 a post against Sonnet 5's ~$0.10; `claude-sonnet-5-5` (Venice prices it
-   25% above Sonnet 5) is now its first fallback. If the prose slips (invented first-person asides, padded "Further reading" lists), set
-   `VeniceWriterModel` back to `claude-sonnet-5-5`.
+   returned no post. About $0.006 a post; `claude-sonnet-5-5` is its first fallback. If the prose
+   slips (invented first-person asides, padded "Further reading" lists), set `VeniceWriterModel`
+   to `claude-sonnet-5-5`.
 
 A failed research pass is logged and skipped rather than aborting the run; the remaining passes
 still ground the post. Venice models emit superscript citation markers (`^4^`, `^1,5,8^`) inline,
@@ -177,43 +171,36 @@ because a model with no sources should print no links rather than remembered one
 Posts from this provider are tagged `local` alongside the model name (`tags: [..., local,
 gemma-26b]`), since a model id alone does not say where the post was written.
 
-These are defined in `BlogGenerator/appsettings.json`. Runtime auth/integration values come from environment variables only: `ANTHROPIC_API_KEY`, `VENICE_API_KEY`, and `LOCAL_AI_BASE_URL` / `LOCAL_AI_MODEL` / `LOCAL_AI_API_KEY`.
+Runtime auth/integration values come from environment variables only: `ANTHROPIC_API_KEY`, `VENICE_API_KEY`, `LOCAL_AI_BASE_URL` / `LOCAL_AI_MODEL` / `LOCAL_AI_API_KEY`, and `IMGFLIP_USERNAME` / `IMGFLIP_PASSWORD`.
 
-Tags are derived automatically from section headings/TL;DR content plus the model name (e.g., `claude`). No manual tag list is required.
+Tags are inferred from the post's headings and salient body terms (fenced code is ignored), plus a tag for every model that wrote it (e.g., `grok-4-6, deepseek-v4-1-flash`). No manual tag list is required.
 
 Every rendered tag is a link to `/tags/?tag=<tag>`, a client-side filtered listing built from `search.json`; `/tags/` with no query lists all tags with their post counts.
 
-## Add the secret to GitHub Actions (alternate: CLI)
-
-You already have the UI instruction above (Repo → Settings → Secrets and variables → Actions). As an alternative you can set the secret using the GitHub CLI:
-
-```sh
-# securely set your secret value (recommended: read from environment or file)
-gh secret set ANTHROPIC_API_KEY --body "$ANTHROPIC_API_KEY"
-```
-
-Note: the workflow expects `ANTHROPIC_API_KEY` in repository secrets.
-
-## Secrets to add (one-time) via UI
+## Secrets to add (one-time)
 
 Repo → Settings → Secrets and variables → Actions:
 
-ANTHROPIC_API_KEY — from your Anthropic account.
+- `VENICE_API_KEY` — from Venice.ai → Settings → API. The scheduled run uses Venice. Venice bills
+  per request against a prepaid USD/DIEM balance; a zero balance returns HTTP 402.
+- `ANTHROPIC_API_KEY` — from your Anthropic account. Only needed to run the `anthropic` provider.
+- `IMGFLIP_USERNAME` / `IMGFLIP_PASSWORD` — optional; without them posts publish meme-free.
 
-VENICE_API_KEY — from Venice.ai → Settings → API. Only needed if you run the `venice` provider.
-Venice bills per request against a prepaid USD/DIEM balance; a zero balance returns HTTP 402.
+Or with the GitHub CLI:
+
+```sh
+gh secret set VENICE_API_KEY --body "$VENICE_API_KEY"
+```
 
 ## Notes & tips
 
-Models with web search: Claude 3.7 Sonnet and newer (plus several others) support this tool; see the docs for the supported list.
+Pricing: on the `anthropic` provider, web search is billed on top of tokens, so `MaxSearches` is the cost knob there.
 
-Pricing: Web search calls are billed in addition to tokens ($10 / 1,000 searches). Keep MaxSearches low (e.g., 3–6) to control cost.
-
-Citations: Claude will include citations automatically in its response when using web search. Your post will then carry those links in the "Further reading" section the prompt asks for.
+Citations: sources end up in the "Further reading" section the prompt asks for. On Venice they come from its citation payload, and the writer may only print URLs the dossier contains.
 
 Domain control: Set AllowedDomains to bias sources you trust (e.g., arxiv.org, blogs.microsoft.com). BlockedDomains can filter out low-quality sites.
 
-Schedule & publish time: Adjust cron and the front-matter timestamp to your preference.
+Schedule & publish time: the cron is in `.github/workflows/daily-post-rag.yml` (fixed UTC); the front-matter timestamp is written in America/New_York by `PostWriter`.
 
 Manual test: Use the workflow's Run workflow button to test once you add the secret. You can select `anthropic` or `venice` as the provider, or leave the menu on `scheduled-default` to run whatever the schedule uses.
 
@@ -230,14 +217,7 @@ Switching the scheduled provider is that one line — the provider name no longe
 
 - Posts publish Tue & Thu (deep dive on one breaking story from the most recent `RecentWindowDays` window) — see the cron in `.github/workflows/daily-post-rag.yml`.
 - Sunday runs switch to a weekly synopsis that blends news and forward-looking tips; the generator detects Sunday automatically.
-- Each post highlights at least one of .NET, Azure, or GitHub while keeping a light, professional sense of humor.
+- Posts cover AI news for software engineers (models and APIs, Azure AI Foundry, AI developer tooling), with .NET and Azure as the readers' home stack, in a light, professional sense of humor.
 - Memes are generated via the imgflip API (`ImgflipMemeEnabled` in `appsettings.json`). The model emits a `<!-- meme: template=..., texts="..." -->` comment choosing one template from a curated catalog; `ImgflipClient` captions that template through imgflip and the rendered image URL is spliced back into the post at the model's chosen spot. Requires `IMGFLIP_USERNAME`/`IMGFLIP_PASSWORD` secrets; if absent or the call fails, the post is published meme-free.
 - Code samples are capped at one per post and asked to be a substantial, runnable-looking example rather than a fragment (`PromptBuilder.CodeGuidance`). The prompt explicitly prefers no code block over an invented one, and bans pseudocode/conceptual labels, `NotImplementedException`, `...` placeholders, and blocks that are only `dotnet add package`/`azd up` lines. `CodeSampleLinter` re-checks the finished post against those rules and prints warnings to the run log; it never edits or deletes the post, since the pipeline publishes unattended and removing a block would orphan the prose introducing it.
 - The meme catalog (`PromptBuilder.ImgflipTemplateCatalog`) is presented to the model in a freshly shuffled order each run so it varies its pick instead of defaulting to one template (it had been over-using "Two Buttons"). To add/remove templates, edit that single list — name and box descriptions live together.
-
-# Future
-
-* check if search tool is getting recent items in azure models
-* figure out how to monetize
-* revisit automatic meme generation once styling and asset library are settled
-* `search.json` is loaded in full on the client (title + excerpt + tags for every post) by both `/search/` and `/tags/`. Fine now (~300 posts); revisit once it grows large — trim per-post payload or move to a prebuilt/lazy index. No storage/build concern: repo and Jekyll build stay well within GitHub Pages limits for years at the current rate.

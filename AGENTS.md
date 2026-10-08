@@ -1,6 +1,3 @@
-# Startup routine
-Check for TODOs in the README. Once a TODO is complete, remove from the README and add an entry to CHANGELOG.md (linked from README) with a short description of the change. If none are found or all are complete ask for instructions.
-
 # Repository Guidelines
 
 ## Generators & Shared Utilities
@@ -17,7 +14,7 @@ Jekyll powers this GitHub Pages blog. `_config.yml` controls metadata, `_include
 
 ## Build, Test, and Development Commands
 - `dotnet build BlogGenerator.sln` builds the solution.
-- `dotnet test BlogGenerator.sln` runs unit tests (title extraction, tag inference, prompt building, meme injection, etc.).
+- `dotnet test BlogGenerator.sln` runs the xUnit suite (providers, prompts, research tools, tags, memes, post output).
 - `dotnet run --project BlogGenerator -- anthropic` generates a post using Anthropic Claude; export `ANTHROPIC_API_KEY` first.
 - `dotnet run --project BlogGenerator -- venice` generates a post using Venice.ai; set `VENICE_API_KEY` first (or put it in a gitignored `.env`, which the generator loads at startup — see `.env.example`).
 - `dotnet run --project BlogGenerator -- local` generates a post with a self-hosted OpenAI-compatible server; set `LOCAL_AI_BASE_URL` and `LOCAL_AI_MODEL` in `.env`. Use the `local-post` skill rather than driving it by hand. `--dossier <path>` writes from a brief gathered elsewhere instead; `--no-research` skips research for an evergreen post.
@@ -37,10 +34,10 @@ Jekyll powers this GitHub Pages blog. `_config.yml` controls metadata, `_include
 Follow standard C# conventions: PascalCase for public members, camelCase for locals, four-space indentation. Generated front matter should use lowercase tags and minimal quoting. CSS stays in one file—use descriptive classes such as `.post-summary` and cluster overrides by feature.
 
 ## Testing Guidelines
-Run `dotnet test` to execute the xUnit test suite covering prompt building, title extraction, tag inference, slug generation, meme extraction/injection, and post output. After generating a post, review it via the local Jekyll preview and confirm external links resolve. If you need regression fixtures for generated content, keep them with the test project.
+After generating a post, review it via the local Jekyll preview and confirm external links resolve. If you need regression fixtures for generated content, keep them with the test project.
 
 ## Commit & Pull Request Guidelines
-Commit messages stay short and imperative (`clean up`, `testing multi llm via azure`), with optional scopes for post runs (`chore(posts): ...`). Keep commits focused and avoid mixing regenerated posts with script changes. Pull requests should summarize publishing impact, link related issues, attach preview screenshots for UI tweaks, and call out new env vars or secrets.
+Commit messages stay short and imperative (`clean up`, `drop stale year from Sunday synopsis prompt`), with optional scopes for post runs (`chore(posts): ...`). Keep commits focused and avoid mixing regenerated posts with script changes. Pull requests should summarize publishing impact, link related issues, attach preview screenshots for UI tweaks, and call out new env vars or secrets.
 
 ## Security & Configuration Tips
-Store `ANTHROPIC_API_KEY` as a GitHub secret, and Venice uses `VENICE_API_KEY`. The local provider's server address and model name (`LOCAL_AI_BASE_URL`, `LOCAL_AI_MODEL`, optional `LOCAL_AI_API_KEY`) live in `.env` too — they name a private host, so keep them out of `appsettings.json` and out of git. Never commit `.env` artifacts — `.env`, `.env.*`, `.claude/settings.local.json`, and `appsettings.*.local.json` are gitignored, and `.env.example` is the value-free template that is safe to commit. Only secrets should come from env vars—content defaults are maintained in `appsettings.json`. Review `_config.yml` before enabling plugins to stay within the GitHub Pages allowlist.
+GitHub secrets: `VENICE_API_KEY` (the scheduled provider), `ANTHROPIC_API_KEY`, and optional `IMGFLIP_USERNAME`/`IMGFLIP_PASSWORD` for memes. The local provider's server address and model name (`LOCAL_AI_BASE_URL`, `LOCAL_AI_MODEL`, optional `LOCAL_AI_API_KEY`) live in `.env`, not GitHub — they name a private host, so keep them out of `appsettings.json` and out of git. Never commit `.env` artifacts — `.env`, `.env.*`, `.claude/settings.local.json`, and `appsettings.*.local.json` are gitignored, and `.env.example` is the value-free template that is safe to commit. Only secrets should come from env vars—content defaults are maintained in `appsettings.json`. Review `_config.yml` before enabling plugins to stay within the GitHub Pages allowlist.
