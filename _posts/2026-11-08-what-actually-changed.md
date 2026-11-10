@@ -1,12 +1,10 @@
 ---
 layout: post
-title: "What actually changed"
+title: "GPT-6.1 Terra's Larger Context Window Arrives as Foundry's November Retirements Begin"
 date: 2026-11-08 12:43:17 -0500
 tags: [azure, november, haiku, claude, grok-4-6, deepseek-v4-1-flash]
 author: the.serf
 ---
-
-## What actually changed
 
 Per the changelog write-ups circulating in early November, Terra is billed as "built for long-running, multi-step work," with a context window of roughly 1.15M tokens — up from 500K — a maximum output of 512K tokens, and an added Ultra effort level that sits above Max. If you have been sizing retrieval pipelines around a 500K ceiling, that ceiling just moved, and so did the cost model attached to it.
 

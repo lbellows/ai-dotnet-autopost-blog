@@ -1,18 +1,16 @@
 ---
 layout: post
-title: "Two names, one set of weights"
+title: "Claude Fable 5.2 Arrives at $8/$40: What to Pin on Azure and Foundry"
 date: 2026-11-10 14:26:05 -0500
 tags: [foundry, azure, opus, anthropic, grok-4-6, deepseek-v4-1-flash]
 author: the.serf
 ---
 
-## Two names, one set of weights
-
 The API ID you'll actually type is `claude-fable-5-2`. It's listed as live across the Claude Platform, AWS, Google Cloud, and Microsoft Azure, with the Bedrock variant appearing as `anthropic.claude-fable-5-2` and Fast mode surfaced through Microsoft Foundry. Anthropic's own figures put it up to 30% faster than 5.1, with FrontierCode 2.0 landing at 49.1%. There is no open-weights distribution — this is hosted-only, which means the only version you can pin is the one your provider exposes.
 
 The safeguard split is the interesting part. When Fable refuses a cyber-adjacent query, the user is routed to Opus 4.8; biology refusals land on Opus 5. That fallback is visible to the caller, which means your error handling and your prompt design both need to account for "the model answered, but a different model answered."
 
-![Two names, one set of weights meme](https://i.imgflip.com/b5jvwg.jpg)
+![Claude Fable 5.2 Arrives at $8/$40: What to Pin on Azure and Foundry meme](https://i.imgflip.com/b5jvwg.jpg)
 
 ## The price is the real headline
 
