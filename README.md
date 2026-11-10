@@ -116,16 +116,22 @@ Venice grounds requests with a provider-side web search toggled through `venice_
 with an agentic tool loop the model can call repeatedly. One request buys one retrieval pass, so
 the provider splits the work in two:
 
-1. **Brain (`grok-4-6`)** — runs one grounded research call per angle (model and platform launches,
+1. **Brain (`muse-spark-open`)** — runs one grounded research call per angle (model and platform launches,
    official changelogs and release notes, GitHub releases, developer news coverage), which is how
    the "at least 4 distinct search attempts" requirement is honored on this provider. Each pass
    returns a factual brief that separates in-window findings from older context, and Venice's
    citation payload supplies verbatim source URLs. The brain has to be disciplined about *dates* —
    refusing to pass an older release off as this week's news, which is the decision that drives
-   NEWS vs. EVERGREEN mode. Cheaper brains were tried and lost on accuracy; see commit `37877c0`.
-2. **Writer (`deepseek-v4-1-flash`)** — composes the post from the merged dossier with search off,
-   with thinking disabled: left on, it spent the whole `VeniceMaxTokens` budget reasoning and
-   returned no post. About $0.006 a post; `claude-sonnet-5-5` is its first fallback. If the prose
+   NEWS vs. EVERGREEN mode. `grok-4-6` held the job until 2026-11-10 and is the first fallback;
+   DeepSeek Flash was tried as a cheaper brain and lost on accuracy (commit `37877c0`). Run side by
+   side on 2026-11-10, Muse matched `grok-4-7` on note volume and source spread at about $0.045 a
+   pass against $0.10; `openai-gpt-61-terra` was cheaper still but returned a third of the notes.
+   Muse reasons heavily, so `VeniceResearchMaxTokens` is 8000: one pass in four was cut off at 6000.
+2. **Writer (`deepseek-v4-1-flash-1017`)** — composes the post from the merged dossier with search
+   off and thinking disabled. About $0.004 a post; `claude-haiku-5-5` is its first fallback. A reply
+   whose first heading is not an H1 title is rejected and the next model is tried: the previous
+   writer, `deepseek-v4-1-flash`, dropped the `# ` in 4 of 20 replays (the 1017 build and Haiku: 0 of 20), which published two posts
+   with a section heading as the title and no opening paragraph. If the prose
    slips (invented first-person asides, padded "Further reading" lists), set `VeniceWriterModel`
    to `claude-sonnet-5-5`.
 

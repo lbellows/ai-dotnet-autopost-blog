@@ -127,6 +127,13 @@ public static partial class PostWriter
             : markdownBody.Trim();
     }
 
+    /// <summary>
+    /// Whether the first heading in the reply is the H1 title. When it is not, the title was written
+    /// as plain text or as an H2, and <see cref="StripLeadingInstructions"/> would discard it.
+    /// </summary>
+    internal static bool StartsWithTitle(string markdownBody) =>
+        StripLeadingInstructions(markdownBody).StartsWith("# ");
+
     // The model sometimes emits a bullet marker alone on one line with the item text on the next
     // line, which Markdown renders as a stray "-" rather than a list. Rejoin those onto one line.
     internal static string NormalizeBrokenBullets(string markdownBody)

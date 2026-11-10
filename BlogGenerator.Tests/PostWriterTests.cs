@@ -30,6 +30,16 @@ public class PostWriterTests
         Assert.Equal("No heading at all\nJust text", result);
     }
 
+    [Theory]
+    [InlineData("# Title\n\nIntro.\n\n## Section", true)]
+    [InlineData("Here is the post:\n\n# Title\n\nIntro.", true)]
+    [InlineData("Title Without A Marker\n\nIntro.\n\n## Section", false)]
+    [InlineData("## Title As A Section\n\nIntro.\n\n## Section", false)]
+    public void StartsWithTitleRequiresTheFirstHeadingToBeAnH1(string markdown, bool expected)
+    {
+        Assert.Equal(expected, PostWriter.StartsWithTitle(markdown));
+    }
+
     [Fact]
     public void StripLeadingTitleHeadingRemovesTopLevelTitle()
     {

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using BlogGenerator.Core.Configuration;
+using BlogGenerator.Core.PostGeneration;
 using BlogGenerator.Core.Prompts;
 using BlogGenerator.Core.Research;
 
@@ -175,8 +176,8 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
     /// <summary>
     /// One chat completion, trying each model in turn. A <paramref name="research"/> call searches
     /// the web and may think; a writing call does neither, because the research is already done:
-    /// with thinking left on, deepseek-v4-1-flash spent all of VeniceMaxTokens reasoning and
-    /// returned no post.
+    /// with thinking left on, a reasoning model can spend all of VeniceMaxTokens reasoning and
+    /// return no post (deepseek-v4-1-flash did; minimax-m3-1-flash does even with it off).
     /// </summary>
     private async Task<ChatCompletion> CompleteAsync(
         IReadOnlyList<string> modelCandidates,
@@ -214,6 +215,12 @@ public sealed partial class VeniceProvider(HttpClient httpClient) : IAIProvider
                 var completion = await ChatCompletions.PostAsync(httpClient, ApiUrl, apiKey, request, "Venice", ct);
                 if (string.IsNullOrWhiteSpace(completion.Content))
                     throw new InvalidOperationException($"Venice model {model} returned empty content.");
+
+                // A post whose title is not an H1 loses that title and its opening paragraph in
+                // PostWriter, and the first section heading is published as the title instead.
+                // deepseek-v4-1-flash did this in 4 of 20 replays, so the next model gets a turn.
+                if (!research && !PostWriter.StartsWithTitle(CleanModelText(completion.Content)))
+                    throw new InvalidOperationException($"Venice model {model} returned a post with no H1 title.");
 
                 return completion;
             }
