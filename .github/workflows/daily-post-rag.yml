@@ -34,6 +34,11 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v7
 
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
       - name: Resolve provider
         id: provider
         env:
@@ -74,7 +79,6 @@ jobs:
           PROVIDER: ${{ steps.provider.outputs.name }}
           DOSSIER_DIR: ${{ runner.temp }}/dossier
         run: |
-          dotnet --version | grep -q "^10\." || { echo "::error::.NET 10 not found on runner."; exit 1; }
           dotnet run --project BlogGenerator -- "$PROVIDER"
 
       # The research the post was written from, for tracing a wrong claim to research or writer.
